@@ -1,0 +1,49 @@
+<!doctype html>
+
+<html class="no-js h-100" lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <link rel="shortcut icon" href="/static/assets/img/favicon.png" />
+
+    <title>
+      Monitor - {% block title %}{% endblock %}
+    </title>
+    
+    <meta name="description" content="A high-quality &amp; free Bootstrap admin dashboard template pack that comes with lots of templates and components.">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="/static/assets/css/fa-all.css" rel="stylesheet">
+    <link href="/static/assets/css/material-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/assets/css/bootstrap.min.css">
+    <link rel="stylesheet" id="main-stylesheet" href="/static/assets/css/shards-dashboards.1.1.0.min.css">
+    <link rel="stylesheet" href="/static/assets/css/extras.1.1.0.min.css">
+    <link rel="stylesheet" href="/static/assets/css/jjsonviewer.css">
+    <script async defer src="/static/assets/js/buttons.js"></script>
+
+  </head>
+  <body class="h-100">
+
+    <div class="container-fluid">
+      <div class="row">
+        
+        {% include 'includes/sidebar.html' %}
+
+        <main class="main-content col-lg-10 col-md-9 col-sm-12 p-0 offset-lg-2 offset-md-3">
+
+          {% include 'includes/navigation.html' %}
+
+          {% block content %}{% endblock content %}
+
+          {% include 'includes/footer.html' %}
+
+        </main>
+      </div>
+    </div>
+    
+    {% include 'includes/scripts.html' %}
+
+    <!-- Specific Page JS goes HERE  -->
+    {% block javascripts %}{% endblock javascripts %}
+
+  </body>
+</html>

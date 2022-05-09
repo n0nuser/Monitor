@@ -1,0 +1,114 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %} Hosts {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="main-content-container container-fluid px-4">
+    <!-- Page Header -->
+    <div class="page-header row no-gutters py-4">
+        <div class="col-12 col-sm-4 text-center text-sm-left mb-0">
+            <span class="text-uppercase page-subtitle">Overview</span>
+            <h3 class="page-title">Hosts
+                <a href="{% url 'host-add' %}"><button type="button" class="btn btn-sm btn-outline-primary">Add</button></a>
+            </h3>
+        </div>
+        <div class="col-sm-8 text-center text-sm-right mb-0">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-outline-primary">Share</button>
+                <button type="button" class="btn btn-sm btn-outline-primary">Export</button>
+            </div>
+        </div>
+    </div>
+    <!-- End Page Header -->
+
+    <!-- Default Light Table -->
+    <div class="row">
+        <div class="col">
+            <div class="card card-small mb-4">
+                <div class="card-header border-bottom">
+                    <!-- <h6 class="m-0">
+                        Hosts
+                    </h6> -->
+                </div>
+
+                <div class="card-body p-0 pb-3 text-center">
+                    <div class="table-responsive scrollbar">
+                        <table class="table mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th scope="col" class="border-0">#</th>
+                                    <th scope="col" class="border-0">Name</th>
+                                    <th scope="col" class="border-0">IP Address</th>
+                                    <th scope="col" class="border-0">Port</th>
+                                    <th scope="col" class="border-0">Token</th>
+                                    <th scope="col" class="border-0">Status</th>
+                                    <th scope="col" class="border-0">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Item -->
+                                {% if page_obj is not True %}
+                                {% for host in page_obj %}
+                                <tr>
+                                    <td><span class="font-weight-bold">{{ forloop.counter }}</span></td>
+                                    <td><a href="{% url 'host-detail' host.token %}"><span class="font-weight-normal">{{ host.name }}</span></a></td>
+                                    <td><span class="font-weight-normal">{{ host.ip }}</span></td>
+                                    <td><span class="font-weight-normal">{{ host.port }}</span></td>
+                                    <td><span class="font-weight-normal">{{ host.token }}</span></td>
+                                    <td><span class="font-weight-normal">{{ host.status }}</span></td>
+                                    <td>
+                                        <a href="{% url 'config-detail' host.token %}"><button type="button" class="mb-2 btn btn-primary mr-2">View Config</button></a>
+                                        <a href="{% url 'host-edit' host.token %}"><button type="button" class="mb-2 btn btn-primary mr-2">Edit</button></a>
+                                        <a href="{% url 'host-delete' host.token %}"><button type="button" class="mb-2 btn btn-danger mr-2">Delete</button></a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Default Light Table -->
+
+    <!-- Pagination -->
+    <div class="row">
+        <div class="col">
+            <a href="?page=1"><button type="button" class="mb-2 btn btn-sm btn-outline-primary mr-1">&laquo;
+                    first</button></a>
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}"><button type="button"
+                    class="mb-2 btn btn-sm btn-outline-primary mr-1">previous</button></a>
+            {% endif %}
+            <button class="mb-2 btn btn-sm text-primary mr-1">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</button>
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}"><button type="button"
+                    class="mb-2 btn btn-sm btn-outline-primary mr-1">next</button></a>
+            {% endif %}
+            <a href="?page={{ page_obj.paginator.num_pages }}"><button type="button"
+                    class="mb-2 btn btn-sm btn-outline-primary mr-1">last</button></a>
+        </div>
+    </div>
+    <!-- End Pagination -->
+</div>
+
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+    jQuery(document).ready(function ($) {
+        $(".clickable-row").click(function () {
+            window.location = $(this).data("href");
+        });
+    });
+</script>
+{% endblock javascripts %}

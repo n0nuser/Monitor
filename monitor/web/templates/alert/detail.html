@@ -1,0 +1,124 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ alert.agent.name }} alert{% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="main-content-container container-fluid px-4">
+  <!-- Page Header -->
+  <div class="page-header row no-gutters py-4">
+    <div class="col-12 col-sm-4 text-center text-sm-left mb-0">
+      <span class="text-uppercase page-subtitle">Alert</span>
+      <h3 class="page-title">{{ alert.agent.name }} alert</h3>
+    </div>
+    <div class="col-sm-8 text-center text-sm-right mb-0">
+      <div class="btn-group">
+        <button type="button" id="exportData" class="btn btn-sm btn-outline-primary">Export</button>
+      </div>
+    </div>
+  </div>
+  <!-- End Page Header -->
+
+  <!-- CPU and RAM -->
+  <div class="row">
+    {% if alert.cpu_percent %}
+    <div class="col-lg col-md-6 col-sm-6 mb-4">
+        <div class="stats-small stats-small--1 card card-small btn btn-sm btn-white">
+          <div class="card-body p-0 d-flex">
+            <div class="d-flex flex-column m-auto">
+              <div class="stats-small__data text-center">
+                <span class="stats-small__label text-uppercase">CPU</span>
+                <h6 class="stats-small__value count my-3">{{ alert.cpu_percent }}%</h6>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if alert.ram_percent %}
+    <div class="col-lg col-md-6 col-sm-6 mb-4">
+        <div class="stats-small stats-small--1 card card-small btn btn-sm btn-white">
+          <div class="card-body p-0 d-flex">
+            <div class="d-flex flex-column m-auto">
+              <div class="stats-small__data text-center">
+                <span class="stats-small__label text-uppercase">RAM</span>
+                <h6 class="stats-small__value count my-3">{{ alert.ram_percent }}%</h6>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+    {% endif %}
+  </div>
+  <!-- End CPU and RAM -->
+
+  <!-- Metrics -->
+  {% if alert.processes %}
+  <!-- <div class="bg-secondary text-white rounded p-3 mb-3" style="box-shadow: inset 0 0 5px rgba(0,0,0,.2);">
+    In Linux processes RAM isn't trustworthy.
+  </div> -->
+
+  <div class="row">
+    <div class="col">
+      <div class="card card-small mb-4">
+        <div class="card-header border-bottom">
+          <h6 class="m-0">Processes</h6>
+        </div>
+        <div class="card-body p-0 pb-3" style="background: #f8f8f8">
+          <div id="process" class="jjson"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  <!-- End Metrics -->
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+  var processjs = '{{ processes|escapejs }}';
+  $("#process").jJsonViewer(processjs, { expanded: true });
+</script>
+
+<script>
+  $("#exportData").click(function () {
+    // create `a` element
+    const processData = {{ alert.processes| safe }};
+    var timestamp = processData.status.timestamp;
+    timestamp = timestamp + "Z";
+    var date = new Date(timestamp);
+    var dformat =
+      ("00" + date.getDate()).slice(-2) + "-" +
+      ("00" + (date.getMonth() + 1)).slice(-2) + "-" +
+      date.getFullYear() + "T" +
+      ("00" + date.getHours()).slice(-2) + "-" +
+      ("00" + date.getMinutes()).slice(-2) + "-" +
+      ("00" + date.getSeconds()).slice(-2);
+    
+    const agent = {{ alert.agent|safe }}
+    $("<a />", {
+      // if supported , set name of file
+      download: agent + "_alert_" + dformat + ".json",
+      // set `href` to `objectURL` of `Blob` of `textarea` value
+      href: URL.createObjectURL(
+        new Blob(['{{ metrics|escapejs }}'], {
+          type: "text/plain"
+        }))
+    })
+      // append `a` element to `body`
+      // call `click` on `DOM` element `a`
+      .appendTo("body")[0].click();
+    // remove appended `a` element after "Save File" dialog,
+    // `window` regains `focus` 
+    $(window).one("focus", function () {
+      $("a").last().remove()
+    })
+  });
+</script>
+{% endblock javascripts %}

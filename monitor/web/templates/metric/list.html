@@ -1,0 +1,116 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ host.name }} metrics{% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="main-content-container container-fluid px-4">
+  <!-- Default Light Table -->
+  <div class="page-header row no-gutters py-4">
+    <div class="col-12 col-sm-4 text-center text-sm-left mb-0">
+      <h3 class="page-title">Metrics of {{ host.name }}</h3>
+      <span class="text-uppercase page-subtitle">{{ page_obj.paginator.count }} metrics in total</span>
+    </div>
+  </div>
+
+  <div class="row py-2 d-flex justify-content-start">
+    <div class="col-12 col-sm-8">
+      <form action="{% url 'metric-list' host.token %}" method="GET">
+        <div id="blog-overview-date-range"
+          class="input-daterange input-group input-group-sm my-auto mr-auto mr-sm-0">
+          <input type="date" class="input-sm form-control" name="start" placeholder="Start Date"
+            id="blog-overview-date-range-1">
+          <input type="date" class="input-sm form-control" name="end" placeholder="End Date"
+            id="blog-overview-date-range-2">
+          <span class="input-group-append">
+            <span class="input-group-text">
+              <i class="material-icons"></i>
+            </span>
+          </span>
+          <button type="submit" class="btn btn-sm btn-outline-primary ml-2">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col">
+      <div class="card card-small mb-4">
+        <div class="card-header border-bottom">
+          <h6 class="m-0"></h6>
+        </div>
+
+        <div class="card-body p-0 pb-3 text-center">
+          <div class="table-responsive scrollbar">
+            <table class="table mb-0">
+              <thead class="bg-light">
+                <tr>
+                  <th scope="col" class="border-0">#</th>
+                  <th scope="col" class="border-0">Created</th>
+                  <th scope="col" class="border-0">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Item -->
+                {% if page_obj is not True %}
+                {% for metric in page_obj %}
+                <tr>
+                  <td><span class="font-weight-bold">{{ forloop.counter }}</span></td>
+                  <td>
+                    <a href="{% url 'metric-detail' host.token metric.id %}">
+                      <span class="font-weight-normal">{{ metric.created }}</span>
+                    </a>
+                  </td>
+                  <td>
+                    <a class="dropdown-item text-danger delete_item"
+                      href="{% url 'metric-delete' host.token metric.id %}">
+                      <span class="fas fa-trash-alt mr-2"></span>Remove
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- End Default Light Table -->
+
+  <!-- Pagination -->
+  <div class="row">
+    <div class="col">
+      <a href="?page=1"><button type="button" class="mb-2 btn btn-sm btn-outline-primary mr-1">&laquo;
+          first</button></a>
+      {% if page_obj.has_previous %}
+
+      <a href="?page={{ page_obj.previous_page_number }}"><button type="button"
+          class="mb-2 btn btn-sm btn-outline-primary mr-1">previous</button></a>
+      {% endif %}
+
+      <button class="mb-2 btn btn-sm text-primary mr-1">
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        <!-- Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} -->
+      </button>
+
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}"><button type="button"
+          class="mb-2 btn btn-sm btn-outline-primary mr-1">next</button></a>
+      {% endif %}
+
+      <a href="?page={{ page_obj.paginator.num_pages }}"><button type="button"
+          class="mb-2 btn btn-sm btn-outline-primary mr-1">last</button></a>
+    </div>
+  </div>
+  <!-- End Pagination -->
+</div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}
