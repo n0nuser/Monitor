@@ -36,7 +36,6 @@
     </div>
   </div>
 
-  <!-- Users Stats -->
   <div class="mb-4">
     <div class="card card-small">
       <div class="card-header border-bottom">
@@ -151,7 +150,7 @@
   const data = {{ data | safe}};
   const labels = {{ labels | safe }};
 
-  if (data.length > 0) and(labels.length > 0) {
+  if ((data.length > 0 && labels.length > 0)) {
     const dataset = {
       label: 'Alerts',
       fill: 'start',
@@ -170,6 +169,8 @@
       labels: labels,
       datasets: [dataset]
     };
+
+    console.log(Data);
 
     // Options
     const Options = {

@@ -57,9 +57,9 @@ def login_view(request):
                 login(request, user)
                 return redirect("/")
             else:
-                messages.error("Invalid credentials")
+                messages.error(request=request,message="Invalid credentials")
         else:
-            messages.error("Error validating the form")
+            messages.error(request=request,message="Error validating the form")
     return render(request, "accounts/login.html", {"form": form})
 
 
@@ -78,7 +78,7 @@ def register_user(request):
             success = True
             # return redirect("/login/")
         else:
-            messages.error("Form is not valid.")
+            messages.error(request=request,message="Form is not valid.")
     else:
         form = SignUpForm()
 
