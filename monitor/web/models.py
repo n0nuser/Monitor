@@ -32,7 +32,7 @@ class Agent(models.Model):
         ("UN", "UNREACHEABLE"),
     ]
 
-    def token(self):
+    def token():
         return binascii.hexlify(os.urandom(20)).decode()
 
     token = models.CharField(max_length=50, default=token, primary_key=True)

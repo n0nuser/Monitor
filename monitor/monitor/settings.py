@@ -33,27 +33,31 @@ PROJECT_DIR = Path(__file__).parent
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env("SECRET_KEY")
+SECRET_KEY = env("SECRET_KEY", default="mySecretDummyKey")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env("DEBUG")
+DEBUG = env("DEBUG", default=False)
+
+SERVER = env("SERVER", default="localhost")
+logging.critical("SERVER: %s", SERVER)
+PORT = env("PORT", default=8000)
 
 AUTH_USER_MODEL = "web.CustomUser"
 INTERNAL_IPS = ["127.0.0.1", "localhost"]
 
 _DEFAULT_CLIENT_HOSTS = ["*"]
-ALLOWED_HOSTS = env("ALLOWED_HOSTS").split(",")
+ALLOWED_HOSTS = env("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(",")
 if not ALLOWED_HOSTS:
-    if DEBUG:
-        ALLOWED_CLIENT_HOSTS = _DEFAULT_CLIENT_HOSTS
-    else:
+    if not DEBUG:
         raise ImproperlyConfigured(
             "ALLOWED_CLIENT_HOSTS environment variable must be set when DEBUG=False."
         )
-logging.debug("ALLOWED_HOSTS: %s", ALLOWED_HOSTS)
+    ALLOWED_CLIENT_HOSTS = _DEFAULT_CLIENT_HOSTS
+CSRF_TRUSTED_ORIGINS = []
+for host in ALLOWED_HOSTS:
+    CSRF_TRUSTED_ORIGINS.extend((f"http://*.{host}:{PORT}", f"https://*.{host}:{PORT}"))
 
 # Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -70,6 +74,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.cache.UpdateCacheMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -78,13 +83,12 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
 ]
 
 ROOT_URLCONF = "monitor.urls"
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
-TEMPLATE_DIR = os.path.join(BASE_DIR, "web/templates")  # ROOT dir for templates
+TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")  # ROOT dir for templates
 
 TEMPLATES = [
     {
@@ -113,9 +117,9 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql",
         "HOST": "db",  # Taken from docker-compose.yml
         "PORT": 5432,
-        "NAME": env("POSTGRES_NAME"),
-        "USER": env("POSTGRES_USER"),
-        "PASSWORD": env("POSTGRES_PASSWORD"),
+        "NAME": env("POSTGRES_NAME", default="postgres"),
+        "USER": env("POSTGRES_USER", default="postgres"),
+        "PASSWORD": env("POSTGRES_PASSWORD", default="postgres"),
     }
 }
 
@@ -132,18 +136,10 @@ DATABASES = {
 
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
-        "LOCATION": "memcache:11211",  # Taken from docker-compose.yml
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
     }
 }
-
-# FOR DEBUGGING
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-#         "LOCATION": "unique-snowflake",
-#     }
-# }
 
 
 # Password validation
@@ -181,12 +177,17 @@ USE_L10N = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Extra places for collectstatic to find static files.
 STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
@@ -210,8 +211,6 @@ APPEND_SLASH = False
 
 #############################################################
 
-SERVER = env("SERVER")
-PORT = env("PORT")
-AGENT_ENDPOINT = f"http://{SERVER}:{PORT}/api/agent/"
+AGENT_ENDPOINT = f"http://{SERVER}:{PORT}/api/agents/"
 ALERT_ENDPOINT = f"http://{SERVER}:{PORT}/api/alerts/"
 METRIC_ENDPOINT = f"http://{SERVER}:{PORT}/api/metrics/"

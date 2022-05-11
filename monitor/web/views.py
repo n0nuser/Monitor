@@ -57,9 +57,9 @@ def login_view(request):
                 login(request, user)
                 return redirect("/")
             else:
-                messages.error("Invalid credentials")
+                messages.error(request=request,message="Invalid credentials")
         else:
-            messages.error("Error validating the form")
+            messages.error(request=request,message="Error validating the form")
     return render(request, "accounts/login.html", {"form": form})
 
 
@@ -78,7 +78,7 @@ def register_user(request):
             success = True
             # return redirect("/login/")
         else:
-            messages.error("Form is not valid.")
+            messages.error(request=request,message="Form is not valid.")
     else:
         form = SignUpForm()
 
@@ -250,63 +250,64 @@ class HostInfoDetailView(DetailView):
         context = super().get_context_data(**kwargs)
 
         # Get the latest metric
-        lastMetric = vars(
-            Metric.objects.filter(
-                agent=self.kwargs["pk"], agent__user=self.request.user
-            ).last()
-        )
+        with contextlib.suppress(TypeError):
+            lastMetric = vars(
+                Metric.objects.filter(
+                    agent=self.kwargs["pk"], agent__user=self.request.user
+                ).last()
+            )
 
-        software = {
-            # Software
-            "Hostname": lastMetric["metrics"]["host"],
-            "OS": lastMetric["metrics"]["os"],
-            "OS Version": lastMetric["metrics"]["os_version"],
-        }
-        context["software"] = software
-
-        hardware = {
-            # Hardware
-            "Architecture": lastMetric["metrics"]["architecture"],
-            "CPU Physical cores": lastMetric["metrics"]["cpu_core_physical"],
-            "CPU Total cores": lastMetric["metrics"]["cpu_core_total"],
-            "CPU Maximum frequency": str(lastMetric["metrics"]["cpu_freq"]["max"])
-            + " MHz",
-            "CPU Minimum frequency": str(lastMetric["metrics"]["cpu_freq"]["min"])
-            + " MHz",
-            "RAM": format_bytes(lastMetric["metrics"]["ram"]["total"]),
-        }
-        context["hardware"] = hardware
-
-        partitions = {
-            partition: {
-                "Used": format_bytes(values["used"]),
-                "Total": format_bytes(values["total"]),
-                "Mount Point": values["mountpoint"],
-                "File System Type": values["fstype"],
+            software = {
+                # Software
+                "Hostname": lastMetric["metrics"]["host"],
+                "OS": lastMetric["metrics"]["os"],
+                "OS Version": lastMetric["metrics"]["os_version"],
             }
-            for partition, values in lastMetric["metrics"]["disk"].items()
-        }
+            context["software"] = software
 
-        context["disk"] = partitions
-
-        nic_adapters = {}
-        for adapter, values in lastMetric["metrics"]["ip"].items():
-            ip = ""
-            mac = ""
-            netmask = ""
-            for address, values2 in values.items():
-                if values2["family"] == 2:
-                    ip = address
-                    netmask = values2["netmask"]
-                elif values2["family"] == 17:
-                    mac = address
-            nic_adapters[adapter] = {
-                "IP Address": ip,
-                "MAC Address": mac,
-                "Network Mask": netmask,
+            hardware = {
+                # Hardware
+                "Architecture": lastMetric["metrics"]["architecture"],
+                "CPU Physical cores": lastMetric["metrics"]["cpu_core_physical"],
+                "CPU Total cores": lastMetric["metrics"]["cpu_core_total"],
+                "CPU Maximum frequency": str(lastMetric["metrics"]["cpu_freq"]["max"])
+                + " MHz",
+                "CPU Minimum frequency": str(lastMetric["metrics"]["cpu_freq"]["min"])
+                + " MHz",
+                "RAM": format_bytes(lastMetric["metrics"]["ram"]["total"]),
             }
-        context["ip"] = nic_adapters
+            context["hardware"] = hardware
 
+            partitions = {
+                partition: {
+                    "Used": format_bytes(values["used"]),
+                    "Total": format_bytes(values["total"]),
+                    "Mount Point": values["mountpoint"],
+                    "File System Type": values["fstype"],
+                }
+                for partition, values in lastMetric["metrics"]["disk"].items()
+            }
+
+            context["disk"] = partitions
+
+            nic_adapters = {}
+            for adapter, values in lastMetric["metrics"]["ip"].items():
+                ip = ""
+                mac = ""
+                netmask = ""
+                for address, values2 in values.items():
+                    if values2["family"] == 2:
+                        ip = address
+                        netmask = values2["netmask"]
+                    elif values2["family"] == 17:
+                        mac = address
+                nic_adapters[adapter] = {
+                    "IP Address": ip,
+                    "MAC Address": mac,
+                    "Network Mask": netmask,
+                }
+            context["ip"] = nic_adapters
+            
         return context
 
 

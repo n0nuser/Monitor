@@ -1,37 +1,39 @@
 version: '3'
 services:
   monitor:
-    # This is the same as the build command in the Dockerfile
-    build: .
-    container_name: django-monitor
+    build: ./monitor
+    container_name: django-monitor-uvicorn
     volumes:
-      - .:/code
+      - static_volume:/home/monitor/monitor/staticfiles
     restart: always
-    command: "gunicorn monitor.asgi:application --bind :$PORT --workers 4 -k uvicorn.workers.UvicornWorker"
-    ports:
-      - "$PORT:$PORT"
+    # command: "gunicorn monitor.asgi:application --bind :8000 --workers 4 -k uvicorn.workers.UvicornWorker"
+    command: "gunicorn monitor.asgi:application --bind :8000 --workers 4 -k uvicorn.workers.UvicornWorker --log-level debug"
+    expose:
+      - 8000
     env_file:
       - .env
     depends_on:
       - db
-      - memcached
   db:
     image: postgres
     container_name: django-monitor-postgres
     restart: always
     volumes:
-      - ./data/db:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data/
     environment:
       - POSTGRES_DB=$POSTGRES_NAME
       - POSTGRES_USER=$POSTGRES_USER
       - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
-  memcached:
-    image: memcached
-    container_name: django-monitor-memcached
-    restart: always
+  nginx:
+    build: ./nginx
+    container_name: django-monitor-nginx
+    volumes:
+      - static_volume:/home/monitor/monitor/staticfiles
     ports:
-     - "11211:11211"
-    entrypoint:
-    - memcached
-    - -m 64
- 
+      - $PORT:80
+    depends_on:
+      - monitor
+
+volumes:
+  postgres_data:
+  static_volume:
