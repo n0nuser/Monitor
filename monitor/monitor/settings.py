@@ -39,7 +39,6 @@ SECRET_KEY = env("SECRET_KEY", default="mySecretDummyKey")
 DEBUG = env("DEBUG", default=False)
 
 SERVER = env("SERVER", default="localhost")
-logging.critical("SERVER: %s", SERVER)
 PORT = env("PORT", default=8000)
 
 AUTH_USER_MODEL = "web.CustomUser"
@@ -70,6 +69,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "import_export",
+    'django_rq',
+    'django_rq_dashboard',
 ]
 
 MIDDLEWARE = [
@@ -141,6 +142,17 @@ CACHES = {
     }
 }
 
+# RQ (Redis Queue)
+# http://python-rq.org/
+
+RQ_QUEUES = {
+    "default": {"HOST": "redis", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 360,},
+}
+
+RQ = {
+    'host': 'redis',
+    'db': 0,
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -194,7 +206,6 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-#############################################################
 # REST FRAMEWORK
 
 # Pagination
@@ -208,6 +219,33 @@ REST_FRAMEWORK = {
 }
 
 APPEND_SLASH = False
+
+# Logging
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler'
+        },
+    },
+    'loggers': {
+        '': {  # 'catch all' loggers by referencing it with the empty string
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}
+
+# Email
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = ""  # add your own settings here
+EMAIL_PORT = ""  # add your own settings here
+EMAIL_HOST_USER = ""  # add your own settings here
+EMAIL_HOST_PASSWORD = ""  # add your own settings here
+EMAIL_USE_TLS = True  # add your own settings here
+DEFAULT_FROM_EMAIL = "you@example.com"  # your email address
 
 #############################################################
 

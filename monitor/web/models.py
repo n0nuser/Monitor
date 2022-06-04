@@ -117,6 +117,12 @@ class AgentConfig(models.Model):
     metrics_post_interval = models.PositiveIntegerField(
         default=60, validators=[MinValueValidator(1)], null=False
     )
+    warning_time_interval = models.PositiveIntegerField(
+        default=10, validators=[MinValueValidator(1)], null=False
+    )
+    bad_time_interval = models.PositiveIntegerField(
+        default=60, validators=[MinValueValidator(1)], null=False
+    )
     threshold_cpu_percent = models.PositiveIntegerField(
         default=50,
         validators=[MinValueValidator(0), MaxValueValidator(100)],
