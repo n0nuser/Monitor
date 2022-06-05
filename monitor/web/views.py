@@ -306,8 +306,7 @@ class HostInfoDetailView(DetailView):
                     "MAC Address": mac,
                     "Network Mask": netmask,
                 }
-            context["ip"] = nic_adapters
-            
+            context["ip"] = nic_adapters          
         return context
 
 

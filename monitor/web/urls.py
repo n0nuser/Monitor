@@ -1,6 +1,7 @@
 from django.urls import path
 from django.contrib.auth.views import LogoutView
 from django.contrib.auth.decorators import login_required
+from web.tasks import startup_scheduling
 from web import views
 
 # pyright: reportMissingModuleSource=false
@@ -73,3 +74,6 @@ urlpatterns = [
         name="metric-delete",
     ),
 ]
+
+
+startup_scheduling()

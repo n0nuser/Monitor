@@ -70,7 +70,6 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "import_export",
     'django_rq',
-    'django_rq_dashboard',
 ]
 
 MIDDLEWARE = [
@@ -113,24 +112,24 @@ WSGI_APPLICATION = "monitor.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "HOST": "db",  # Taken from docker-compose.yml
-        "PORT": 5432,
-        "NAME": env("POSTGRES_NAME", default="postgres"),
-        "USER": env("POSTGRES_USER", default="postgres"),
-        "PASSWORD": env("POSTGRES_PASSWORD", default="postgres"),
-    }
-}
-
-# FOR DEBUGGING
 # DATABASES = {
 #     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+#         "ENGINE": "django.db.backends.postgresql",
+#         "HOST": "db",  # Taken from docker-compose.yml
+#         "PORT": 5432,
+#         "NAME": env("POSTGRES_NAME", default="postgres"),
+#         "USER": env("POSTGRES_USER", default="postgres"),
+#         "PASSWORD": env("POSTGRES_PASSWORD", default="postgres"),
 #     }
 # }
+
+# FOR DEBUGGING
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+    }
+}
 
 # Cache
 # https://docs.djangoproject.com/en/4.0/topics/cache/
@@ -145,13 +144,41 @@ CACHES = {
 # RQ (Redis Queue)
 # http://python-rq.org/
 
+# RQ_QUEUES = {
+#     "default": {"HOST": "redis", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 360}
+# }
+
+# RQ = {
+#     'host': 'redis',
+#     'db': 0,
+#     'DEFAULT_RESULT_TTL': 5000,
+# }
+
 RQ_QUEUES = {
-    "default": {"HOST": "redis", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 360,},
+    'default': {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': 360,
+    },
+    'high': {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': 360,
+    },
+    'low': {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': 360,
+    }
 }
 
 RQ = {
-    'host': 'redis',
+    'host': 'localhost',
     'db': 0,
+    'DEFAULT_RESULT_TTL': 60*60*24 * 7,
 }
 
 # Password validation
