@@ -49,12 +49,8 @@ class ExecuteForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["command"].widget.attrs.update({"class": "form-control"})
-        self.fields["timeout_for_request"].widget.attrs.update(
-            {"class": "form-control"}
-        )
-        self.fields["timeout_for_command"].widget.attrs.update(
-            {"class": "form-control"}
-        )
+        self.fields["timeout_for_request"].widget.attrs.update({"class": "form-control"})
+        self.fields["timeout_for_command"].widget.attrs.update({"class": "form-control"})
 
     def execute_command(self, host, port):
         # send email using the self.cleaned_data dictionary
@@ -102,25 +98,15 @@ class AgentConfigForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["logging_filename"].widget.attrs.update({"class": "form-control"})
         self.fields["logging_level"].widget.attrs.update({"class": "form-control"})
-        self.fields["metrics_log_filename"].widget.attrs.update(
-            {"class": "form-control"}
-        )
-        self.fields["metrics_post_interval"].widget.attrs.update(
-            {"class": "form-control"}
-        )
-        self.fields["threshold_cpu_percent"].widget.attrs.update(
-            {"class": "form-control"}
-        )
-        self.fields["threshold_ram_percent"].widget.attrs.update(
-            {"class": "form-control"}
-        )
+        self.fields["metrics_log_filename"].widget.attrs.update({"class": "form-control"})
+        self.fields["metrics_post_interval"].widget.attrs.update({"class": "form-control"})
+        self.fields["threshold_cpu_percent"].widget.attrs.update({"class": "form-control"})
+        self.fields["threshold_ram_percent"].widget.attrs.update({"class": "form-control"})
         self.fields["uvicorn_backlog"].widget.attrs.update({"class": "form-control"})
         self.fields["uvicorn_host"].widget.attrs.update({"class": "form-control"})
         self.fields["uvicorn_log_level"].widget.attrs.update({"class": "form-control"})
         self.fields["uvicorn_port"].widget.attrs.update({"class": "form-control"})
-        self.fields["uvicorn_timeout_keep_alive"].widget.attrs.update(
-            {"class": "form-control"}
-        )
+        self.fields["uvicorn_timeout_keep_alive"].widget.attrs.update({"class": "form-control"})
         self.fields["uvicorn_workers"].widget.attrs.update({"class": "form-control"})
 
     class Meta:
@@ -135,6 +121,8 @@ class AgentConfigForm(forms.ModelForm):
             "metrics_post_interval": "Interval in seconds to send metrics",
             "threshold_cpu_percent": "Percentage of CPU usage to trigger alert",
             "threshold_ram_percent": "Percentage of RAM usage to trigger alert",
+            "warning_time_interval": "Time interval in minutes for Warning status in which alerts are accumulated, or metrics aren't received",
+            "bad_time_interval": "Time interval in minutes for Bad status in which alerts are accumulated, or metrics aren't received",
             "uvicorn_debug": "Enable debug mode",
             "uvicorn_reload": "Enable reloading of the uvicorn server",
             "uvicorn_backlog": "Backlog of the uvicorn server",

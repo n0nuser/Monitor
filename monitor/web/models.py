@@ -9,9 +9,6 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 
-# pyright: reportMissingModuleSource=false
-# pyright: reportMissingImports=false
-
 
 class CustomUser(AbstractUser):
     email = models.EmailField(("email address"), unique=True)
@@ -37,9 +34,7 @@ class Agent(models.Model):
 
     token = models.CharField(max_length=50, default=token, primary_key=True)
     created = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(
-        CustomUser, related_name="agents", on_delete=models.CASCADE
-    )
+    user = models.ForeignKey(CustomUser, related_name="agents", on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     ip = models.GenericIPAddressField(null=True, blank=True)
     port = models.IntegerField(
@@ -48,9 +43,9 @@ class Agent(models.Model):
         null=True,
         blank=True,
     )
-    status = models.CharField(
-        max_length=20, default="OK", blank=True, choices=STATUS_CHOICES
-    )
+    status = models.CharField(max_length=20, default="OK", blank=True, choices=STATUS_CHOICES)
+    status_reason = models.CharField(max_length=200, default="", blank=True)
+    
 
     def __str__(self) -> str:
         return self.name
@@ -103,26 +98,14 @@ class AgentConfig(models.Model):
     # endpoints_agent <- By hand :(
     # endpoints_metric  <- By hand :(
     ####################################
-    logging_filename = models.CharField(
-        max_length=100, default="monitor.log", null=False
-    )
-    logging_level = models.CharField(
-        max_length=9, default="info", choices=LEVEL_CHOICES, null=False
-    )
+    logging_filename = models.CharField(max_length=100, default="monitor.log", null=False)
+    logging_level = models.CharField(max_length=9, default="info", choices=LEVEL_CHOICES, null=False)
     metrics_enable_logfile = models.BooleanField(default=False, null=False)
     metrics_get_endpoint = models.BooleanField(default=False, null=False)
-    metrics_log_filename = models.CharField(
-        max_length=100, default="metrics.json", null=False
-    )
-    metrics_post_interval = models.PositiveIntegerField(
-        default=60, validators=[MinValueValidator(1)], null=False
-    )
-    warning_time_interval = models.PositiveIntegerField(
-        default=10, validators=[MinValueValidator(1)], null=False
-    )
-    bad_time_interval = models.PositiveIntegerField(
-        default=60, validators=[MinValueValidator(1)], null=False
-    )
+    metrics_log_filename = models.CharField(max_length=100, default="metrics.json", null=False)
+    metrics_post_interval = models.PositiveIntegerField(default=60, validators=[MinValueValidator(1)], null=False)
+    warning_time_interval = models.PositiveIntegerField(default=10, validators=[MinValueValidator(1)], null=False)
+    bad_time_interval = models.PositiveIntegerField(default=60, validators=[MinValueValidator(1)], null=False)
     threshold_cpu_percent = models.PositiveIntegerField(
         default=50,
         validators=[MinValueValidator(0), MaxValueValidator(100)],
@@ -136,9 +119,7 @@ class AgentConfig(models.Model):
     uvicorn_backlog = models.PositiveIntegerField(default=2048, null=False)
     uvicorn_debug = models.BooleanField(default=False, null=False)
     uvicorn_host = models.GenericIPAddressField(default="0.0.0.0", null=False)
-    uvicorn_log_level = models.CharField(
-        max_length=9, default="trace", choices=UVICORN_CHOICES, null=False
-    )
+    uvicorn_log_level = models.CharField(max_length=9, default="trace", choices=UVICORN_CHOICES, null=False)
     uvicorn_port = models.PositiveIntegerField(
         default=8080,
         validators=[MinValueValidator(1), MaxValueValidator(65535)],
@@ -178,8 +159,22 @@ class Alert(models.Model):
         ordering = ["created"]
         verbose_name_plural = "Alerts"
 
+######################################################################################################################
 
-###############################################################################
+# Se gestiona por usuario en vez de por agente
+# Si se quiere individualizar la gestión de alertas por agente, que el usuario se cree otra cuenta.
+
+
+class AlertEmail(models.Model):
+    user = models.ForeignKey(CustomUser, related_name="alert_email", on_delete=models.CASCADE)
+    email = models.EmailField(null=True, blank=True)
+
+
+class AlertWebhook(models.Model):
+    user = models.ForeignKey(CustomUser, related_name="alert_webhook", on_delete=models.CASCADE)
+    webhook = models.URLField(null=True, blank=True)
+
+######################################################################################################################
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)

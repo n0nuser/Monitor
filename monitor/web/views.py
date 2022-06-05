@@ -57,9 +57,9 @@ def login_view(request):
                 login(request, user)
                 return redirect("/")
             else:
-                messages.error(request=request,message="Invalid credentials")
+                messages.error(request=request, message="Invalid credentials")
         else:
-            messages.error(request=request,message="Error validating the form")
+            messages.error(request=request, message="Error validating the form")
     return render(request, "accounts/login.html", {"form": form})
 
 
@@ -78,7 +78,7 @@ def register_user(request):
             success = True
             # return redirect("/login/")
         else:
-            messages.error(request=request,message="Form is not valid.")
+            messages.error(request=request, message="Form is not valid.")
     else:
         form = SignUpForm()
 
@@ -132,11 +132,7 @@ class HostUpdateView(UpdateView):
     template_name = "host/edit.html"
 
     def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .filter(agent=self.kwargs["pk"], agent__user=self.request.user)
-        )
+        return super().get_queryset().filter(agent=self.kwargs["pk"], agent__user=self.request.user)
 
 
 class HostDeleteView(DeleteView):
@@ -145,11 +141,7 @@ class HostDeleteView(DeleteView):
     template_name = "common/delete.html"
 
     def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .filter(agent=self.kwargs["pk"], agent__user=self.request.user)
-        )
+        return super().get_queryset().filter(agent=self.kwargs["pk"], agent__user=self.request.user)
 
 
 class HostListView(ListView):
@@ -170,9 +162,9 @@ class HostDetailView(DetailView):
 
     def get_context_data(self, **kwargs):  # sourcery skip: extract-method
         context = super().get_context_data(**kwargs)
-        metrics = Metric.objects.filter(
-            agent=self.kwargs["pk"], agent__user=self.request.user
-        ).annotate(date=TruncMinute("created"))
+        metrics = Metric.objects.filter(agent=self.kwargs["pk"], agent__user=self.request.user).annotate(
+            date=TruncMinute("created")
+        )
 
         try:
             lastMetric, metricsRangeDate = self._rangeDate(self.request, metrics)
@@ -251,11 +243,7 @@ class HostInfoDetailView(DetailView):
 
         # Get the latest metric
         with contextlib.suppress(TypeError):
-            lastMetric = vars(
-                Metric.objects.filter(
-                    agent=self.kwargs["pk"], agent__user=self.request.user
-                ).last()
-            )
+            lastMetric = vars(Metric.objects.filter(agent=self.kwargs["pk"], agent__user=self.request.user).last())
 
             software = {
                 # Software
@@ -270,10 +258,8 @@ class HostInfoDetailView(DetailView):
                 "Architecture": lastMetric["metrics"]["architecture"],
                 "CPU Physical cores": lastMetric["metrics"]["cpu_core_physical"],
                 "CPU Total cores": lastMetric["metrics"]["cpu_core_total"],
-                "CPU Maximum frequency": str(lastMetric["metrics"]["cpu_freq"]["max"])
-                + " MHz",
-                "CPU Minimum frequency": str(lastMetric["metrics"]["cpu_freq"]["min"])
-                + " MHz",
+                "CPU Maximum frequency": str(lastMetric["metrics"]["cpu_freq"]["max"]) + " MHz",
+                "CPU Minimum frequency": str(lastMetric["metrics"]["cpu_freq"]["min"]) + " MHz",
                 "RAM": format_bytes(lastMetric["metrics"]["ram"]["total"]),
             }
             context["hardware"] = hardware
@@ -306,7 +292,7 @@ class HostInfoDetailView(DetailView):
                     "MAC Address": mac,
                     "Network Mask": netmask,
                 }
-            context["ip"] = nic_adapters          
+            context["ip"] = nic_adapters
         return context
 
 
@@ -323,9 +309,7 @@ class HostExecuteFormView(FormView):
         now you can use {{ metric }} within the template
         """
         context = super().get_context_data(**kwargs)
-        context["host"] = get_object_or_404(
-            Agent, pk=self.kwargs["pk"], user=self.request.user
-        )
+        context["host"] = get_object_or_404(Agent, pk=self.kwargs["pk"], user=self.request.user)
         return context
 
     def form_valid(self, form):
@@ -355,9 +339,7 @@ class HostConfigUpdateView(UpdateView):
 
     def form_valid(self, form):
         form.instance.user = self.request.user
-        form.instance.agent = Agent.objects.get(
-            token=self.kwargs["pk"], user=self.request.user
-        )
+        form.instance.agent = Agent.objects.get(token=self.kwargs["pk"], user=self.request.user)
         form.save()
         # Definition of SuccessURL from source code
         # This way it lets me pass args from the actual URL to reverse_lazy
@@ -447,9 +429,7 @@ class MetricListView(ListView):
         elif endDate:
             return self._getAlertsByDate(startDate, endDate, host)
         else:
-            return Metric.objects.filter(agent__user=self.request.user).order_by(
-                "-created"
-            )
+            return Metric.objects.filter(agent__user=self.request.user).order_by("-created")
 
     def _getAlertsByDate(self, startDate, endDate, agent):
         date_from = datetime.strptime(startDate, "%Y-%m-%d")
@@ -470,9 +450,7 @@ class MetricListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["host"] = get_object_or_404(
-            Agent, token=self.kwargs["pk"], user=self.request.user
-        )
+        context["host"] = get_object_or_404(Agent, token=self.kwargs["pk"], user=self.request.user)
         return context
 
 
@@ -501,9 +479,7 @@ class MetricDeleteView(DeleteView):
     template_name = "common/delete.html"
 
     def get_object(self):
-        return get_object_or_404(
-            Metric, pk=self.kwargs["pk1"], agent__user=self.request.user
-        )
+        return get_object_or_404(Metric, pk=self.kwargs["pk1"], agent__user=self.request.user)
 
     def form_valid(self, form):
         # Definition of form_valid from source code (BaseDeleteView)
@@ -531,17 +507,13 @@ class AlertListView(ListView):
         elif endDate:
             return self._getAlertsByDate(startDate, endDate)
         else:
-            return Alert.objects.filter(agent__user=self.request.user).order_by(
-                "-created"
-            )
+            return Alert.objects.filter(agent__user=self.request.user).order_by("-created")
 
     def _getAlertsByDate(self, startDate, endDate):
         date_from = datetime.strptime(startDate, "%Y-%m-%d")
         date_to = datetime.strptime(endDate, "%Y-%m-%d")
         return (
-            Alert.objects.all()
-            .order_by("-created")
-            .filter(created__date=date_from, agent__user=self.request.user)
+            Alert.objects.all().order_by("-created").filter(created__date=date_from, agent__user=self.request.user)
             if startDate == endDate
             else Alert.objects.filter(agent__user=self.request.user)
             .order_by("-created")
@@ -613,9 +585,7 @@ class AlertDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["processes"] = json.dumps(
-            context["object"].__dict__["processes"], indent=4, sort_keys=True
-        )
+        context["processes"] = json.dumps(context["object"].__dict__["processes"], indent=4, sort_keys=True)
         # context["object"]["processes"] = json.dumps(context["object"]["processes"], cls=DjangoJSONEncoder)
         return context
 
@@ -626,6 +596,4 @@ class AlertDeleteView(DeleteView):
     template_name = "common/delete.html"
 
     def get_object(self):
-        return get_object_or_404(
-            Alert, pk=self.kwargs["pk1"], agent__user=self.request.user
-        )
+        return get_object_or_404(Alert, pk=self.kwargs["pk1"], agent__user=self.request.user)

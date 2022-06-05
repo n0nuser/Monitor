@@ -14,7 +14,6 @@ import os
 import environ
 from unipath import Path
 from django.core.exceptions import ImproperlyConfigured
-import logging
 
 env = environ.Env(
     # set casting, default value
@@ -48,9 +47,7 @@ _DEFAULT_CLIENT_HOSTS = ["*"]
 ALLOWED_HOSTS = env("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(",")
 if not ALLOWED_HOSTS:
     if not DEBUG:
-        raise ImproperlyConfigured(
-            "ALLOWED_CLIENT_HOSTS environment variable must be set when DEBUG=False."
-        )
+        raise ImproperlyConfigured("ALLOWED_CLIENT_HOSTS environment variable must be set when DEBUG=False.")
     ALLOWED_CLIENT_HOSTS = _DEFAULT_CLIENT_HOSTS
 CSRF_TRUSTED_ORIGINS = []
 for host in ALLOWED_HOSTS:
@@ -69,7 +66,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "import_export",
-    'django_rq',
+    "django_rq",
 ]
 
 MIDDLEWARE = [
@@ -155,30 +152,30 @@ CACHES = {
 # }
 
 RQ_QUEUES = {
-    'default': {
-        'HOST': 'localhost',
-        'PORT': 6379,
-        'DB': 0,
-        'DEFAULT_TIMEOUT': 360,
+    "default": {
+        "HOST": "localhost",
+        "PORT": 6379,
+        "DB": 0,
+        "DEFAULT_TIMEOUT": 360,
     },
-    'high': {
-        'HOST': 'localhost',
-        'PORT': 6379,
-        'DB': 0,
-        'DEFAULT_TIMEOUT': 360,
+    "high": {
+        "HOST": "localhost",
+        "PORT": 6379,
+        "DB": 0,
+        "DEFAULT_TIMEOUT": 360,
     },
-    'low': {
-        'HOST': 'localhost',
-        'PORT': 6379,
-        'DB': 0,
-        'DEFAULT_TIMEOUT': 360,
-    }
+    "low": {
+        "HOST": "localhost",
+        "PORT": 6379,
+        "DB": 0,
+        "DEFAULT_TIMEOUT": 360,
+    },
 }
 
 RQ = {
-    'host': 'localhost',
-    'db': 0,
-    'DEFAULT_RESULT_TTL': 60*60*24 * 7,
+    "host": "localhost",
+    "db": 0,
+    "DEFAULT_RESULT_TTL": 60 * 60 * 24 * 7,
 }
 
 # Password validation
@@ -222,8 +219,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 # Extra places for collectstatic to find static files.
 STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
 STATICFILES_FINDERS = [
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    "django.contrib.staticfiles.finders.FileSystemFinder",
+    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
 ]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
@@ -250,17 +247,15 @@ APPEND_SLASH = False
 # Logging
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler'
-        },
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
     },
-    'loggers': {
-        '': {  # 'catch all' loggers by referencing it with the empty string
-            'handlers': ['console'],
-            'level': 'DEBUG',
+    "loggers": {
+        "": {  # 'catch all' loggers by referencing it with the empty string
+            "handlers": ["console"],
+            "level": "DEBUG",
         },
     },
 }

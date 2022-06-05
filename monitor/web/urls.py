@@ -25,9 +25,7 @@ urlpatterns = [
     ),
     path("host/", login_required(views.HostListView.as_view()), name="host-list"),
     path("host/add/", login_required(views.HostCreateView.as_view()), name="host-add"),
-    path(
-        "host/<pk>/", login_required(views.HostDetailView.as_view()), name="host-detail"
-    ),
+    path("host/<pk>/", login_required(views.HostDetailView.as_view()), name="host-detail"),
     path(
         "host/<pk>/delete/",
         login_required(views.HostDeleteView.as_view()),
@@ -75,5 +73,5 @@ urlpatterns = [
     ),
 ]
 
-
+# https://www.pythonfixing.com/2022/01/fixed-execute-code-when-django-starts.html
 startup_scheduling()
