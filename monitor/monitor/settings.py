@@ -14,7 +14,6 @@ import os
 import environ
 from unipath import Path
 from django.core.exceptions import ImproperlyConfigured
-import logging
 
 env = environ.Env(
     # set casting, default value
@@ -39,7 +38,6 @@ SECRET_KEY = env("SECRET_KEY", default="mySecretDummyKey")
 DEBUG = env("DEBUG", default=False)
 
 SERVER = env("SERVER", default="localhost")
-logging.critical("SERVER: %s", SERVER)
 PORT = env("PORT", default=8000)
 
 AUTH_USER_MODEL = "web.CustomUser"
@@ -49,9 +47,7 @@ _DEFAULT_CLIENT_HOSTS = ["*"]
 ALLOWED_HOSTS = env("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(",")
 if not ALLOWED_HOSTS:
     if not DEBUG:
-        raise ImproperlyConfigured(
-            "ALLOWED_CLIENT_HOSTS environment variable must be set when DEBUG=False."
-        )
+        raise ImproperlyConfigured("ALLOWED_CLIENT_HOSTS environment variable must be set when DEBUG=False.")
     ALLOWED_CLIENT_HOSTS = _DEFAULT_CLIENT_HOSTS
 CSRF_TRUSTED_ORIGINS = []
 for host in ALLOWED_HOSTS:
@@ -70,6 +66,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "import_export",
+    "django_rq",
 ]
 
 MIDDLEWARE = [
@@ -112,24 +109,24 @@ WSGI_APPLICATION = "monitor.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "HOST": "db",  # Taken from docker-compose.yml
-        "PORT": 5432,
-        "NAME": env("POSTGRES_NAME", default="postgres"),
-        "USER": env("POSTGRES_USER", default="postgres"),
-        "PASSWORD": env("POSTGRES_PASSWORD", default="postgres"),
-    }
-}
-
-# FOR DEBUGGING
 # DATABASES = {
 #     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+#         "ENGINE": "django.db.backends.postgresql",
+#         "HOST": "db",  # Taken from docker-compose.yml
+#         "PORT": 5432,
+#         "NAME": env("POSTGRES_NAME", default="postgres"),
+#         "USER": env("POSTGRES_USER", default="postgres"),
+#         "PASSWORD": env("POSTGRES_PASSWORD", default="postgres"),
 #     }
 # }
+
+# FOR DEBUGGING
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+    }
+}
 
 # Cache
 # https://docs.djangoproject.com/en/4.0/topics/cache/
@@ -141,6 +138,45 @@ CACHES = {
     }
 }
 
+# RQ (Redis Queue)
+# http://python-rq.org/
+
+# RQ_QUEUES = {
+#     "default": {"HOST": "redis", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 360}
+# }
+
+# RQ = {
+#     'host': 'redis',
+#     'db': 0,
+#     'DEFAULT_RESULT_TTL': 5000,
+# }
+
+RQ_QUEUES = {
+    "default": {
+        "HOST": "localhost",
+        "PORT": 6379,
+        "DB": 0,
+        "DEFAULT_TIMEOUT": 360,
+    },
+    "high": {
+        "HOST": "localhost",
+        "PORT": 6379,
+        "DB": 0,
+        "DEFAULT_TIMEOUT": 360,
+    },
+    "low": {
+        "HOST": "localhost",
+        "PORT": 6379,
+        "DB": 0,
+        "DEFAULT_TIMEOUT": 360,
+    },
+}
+
+RQ = {
+    "host": "localhost",
+    "db": 0,
+    "DEFAULT_RESULT_TTL": 60 * 60 * 24 * 7,
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -183,8 +219,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 # Extra places for collectstatic to find static files.
 STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
 STATICFILES_FINDERS = [
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    "django.contrib.staticfiles.finders.FileSystemFinder",
+    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
 ]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
@@ -194,7 +230,6 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-#############################################################
 # REST FRAMEWORK
 
 # Pagination
@@ -208,6 +243,30 @@ REST_FRAMEWORK = {
 }
 
 APPEND_SLASH = False
+
+# Logging
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "loggers": {
+        "": {  # 'catch all' loggers by referencing it with the empty string
+            "handlers": ["console"],
+            "level": "DEBUG",
+        },
+    },
+}
+
+# Email
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = str(env("EMAIL_HOST", default="smtp.gmail.com"))  # add your own settings here
+EMAIL_PORT = int(env("EMAIL_PORT", default=587))  # add your own settings here
+EMAIL_HOST_USER = str(env("EMAIL_HOST_USER"))  # add your own settings here
+EMAIL_HOST_PASSWORD = str(env("EMAIL_HOST_PASSWORD"))  # add your own settings here
+EMAIL_USE_TLS = True  # add your own settings here
 
 #############################################################
 

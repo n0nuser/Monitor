@@ -1,6 +1,7 @@
 from django.urls import path
 from django.contrib.auth.views import LogoutView
 from django.contrib.auth.decorators import login_required
+from web.tasks import startup_scheduling
 from web import views
 
 # pyright: reportMissingModuleSource=false
@@ -24,9 +25,7 @@ urlpatterns = [
     ),
     path("host/", login_required(views.HostListView.as_view()), name="host-list"),
     path("host/add/", login_required(views.HostCreateView.as_view()), name="host-add"),
-    path(
-        "host/<pk>/", login_required(views.HostDetailView.as_view()), name="host-detail"
-    ),
+    path("host/<pk>/", login_required(views.HostDetailView.as_view()), name="host-detail"),
     path(
         "host/<pk>/delete/",
         login_required(views.HostDeleteView.as_view()),
@@ -73,3 +72,6 @@ urlpatterns = [
         name="metric-delete",
     ),
 ]
+
+# https://www.pythonfixing.com/2022/01/fixed-execute-code-when-django-starts.html
+startup_scheduling()
