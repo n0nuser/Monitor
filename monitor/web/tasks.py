@@ -1,6 +1,6 @@
 from django.core.mail import send_mail, BadHeaderError
 from django_rq import job, get_scheduler
-from monitor.settings import DEFAULT_FROM_EMAIL
+from monitor.settings import EMAIL_HOST_USER
 from web.models import AgentConfig, Metric, Alert, Agent
 import datetime
 import logging
@@ -92,12 +92,12 @@ def check_status():
             agent.status_reason = ""
 
 
-@job
-def send_email_task(to, subject, message):
-    logger.info(f"from={DEFAULT_FROM_EMAIL}, {to=}, {subject=}, {message=}")
+@job('default', retry=5)
+def send_email_task(to: list, subject: str, message: str, html_message: str):
+    logger.info(f"from={EMAIL_HOST_USER}, {to=}, {subject=}, {message=}")
     try:
         logger.info("About to send_mail")
-        send_mail(subject, message, DEFAULT_FROM_EMAIL, [DEFAULT_FROM_EMAIL])
+        send_mail(subject, message, EMAIL_HOST_USER, to, html_message=html_message)
     except BadHeaderError:
         logger.info("BadHeaderError")
     except Exception as e:
@@ -118,15 +118,13 @@ def startup_scheduling():
     scheduler.schedule(
         scheduled_time=datetime.datetime.now(datetime.timezone.utc),  # Time for first execution, in UTC timezone
         func=remove_old,  # Function to be queued
-        # interval=30 * 60,  # Time before the function is called again, in seconds
-        interval=60,  # Time before the function is called again, in seconds
+        interval=30 * 60,  # Time before the function is called again, in seconds
     )
 
     scheduler.schedule(
         scheduled_time=datetime.datetime.now(datetime.timezone.utc),  # Time for first execution, in UTC timezone
         func=check_status,  # Function to be queued
-        # interval=10 * 60,  # Time before the function is called again, in seconds
-        interval=60,  # Time before the function is called again, in seconds
+        interval=10 * 60,  # Time before the function is called again, in seconds
     )
 
     # scheduler.schedule(

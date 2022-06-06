@@ -10,7 +10,7 @@ services:
     expose:
       - 8000
     env_file:
-      - .env
+      - ./monitor/.env
     links:
       - postgres
       - redis

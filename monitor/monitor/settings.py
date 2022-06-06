@@ -262,12 +262,11 @@ LOGGING = {
 
 # Email
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = ""  # add your own settings here
-EMAIL_PORT = ""  # add your own settings here
-EMAIL_HOST_USER = ""  # add your own settings here
-EMAIL_HOST_PASSWORD = ""  # add your own settings here
+EMAIL_HOST = str(env("EMAIL_HOST", default="smtp.gmail.com"))  # add your own settings here
+EMAIL_PORT = int(env("EMAIL_PORT", default=587))  # add your own settings here
+EMAIL_HOST_USER = str(env("EMAIL_HOST_USER"))  # add your own settings here
+EMAIL_HOST_PASSWORD = str(env("EMAIL_HOST_PASSWORD"))  # add your own settings here
 EMAIL_USE_TLS = True  # add your own settings here
-DEFAULT_FROM_EMAIL = "you@example.com"  # your email address
 
 #############################################################
 

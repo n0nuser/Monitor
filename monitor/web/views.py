@@ -1,22 +1,23 @@
-import json
-import contextlib
+from datetime import datetime, timedelta
 from django import template
 from django.conf import settings
-from web.utils import format_bytes
-from django.utils import timezone
-from django.db.models import Count
-from django.template import loader
 from django.contrib import messages
-from django.urls import reverse_lazy
-from datetime import datetime, timedelta
-from rest_framework.authtoken.models import Token
-from django.db.models.functions import TruncMinute
 from django.contrib.auth import authenticate, login
-from django.http import HttpResponse, HttpResponseRedirect
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import Count
+from django.db.models.functions import TruncMinute
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
+from django.template import loader
+from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.generic import ListView, DetailView, TemplateView
 from django.views.generic.edit import DeleteView, UpdateView, CreateView, FormView
+from rest_framework.authtoken.models import Token
+from web.tasks import send_email_task
+from web.utils import format_bytes
+import contextlib
+import json
 
 # pyright: reportMissingModuleSource=false
 # pyright: reportMissingImports=false
@@ -74,8 +75,26 @@ def register_user(request):
             username = form.cleaned_data.get("username")
             raw_password = form.cleaned_data.get("password1")
             authenticate(username=username, password=raw_password)
-            messages.success("User created.")
+            messages.success(request=request, message="User created.")
             success = True
+
+            html_content = loader.render_to_string(
+                "email/default.html",
+                {
+                    "year": datetime.now().year,
+                    "company": "Monitor",
+                    "address": "Salamanca, Spain",
+                    "url": "https://nonuser.es",
+                    "header": f"Welcome to Monitor {username}",
+                    "message": "Congratulations on setting up your account! You now have access to all account features!",
+                },
+            )
+            send_email_task(
+                to=[form.cleaned_data.get("email")],
+                subject="Welcome to Monitor",
+                message="",
+                html_message=html_content,
+            )
             # return redirect("/login/")
         else:
             messages.error(request=request, message="Form is not valid.")
@@ -320,7 +339,7 @@ class HostExecuteFormView(FormView):
         response = json.dumps(response, cls=DjangoJSONEncoder)
         # url = reverse_lazy("host-execute", kwargs={"pk": self.kwargs["pk"]}) + "#response"
         url = f"{self.request.path}#response"
-        messages.success(self.request, response)
+        messages.success(request=self.request, message=response)
         return HttpResponseRedirect(url)
 
 
