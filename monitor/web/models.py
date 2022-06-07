@@ -1,4 +1,3 @@
-import email
 import os
 import binascii
 from django.db import models
@@ -170,6 +169,9 @@ class AlertEmail(models.Model):
     name = models.CharField(max_length=100, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
 
+    def __str__(self) -> str:
+        return f"{self.user.username} - {self.email}"
+
     class Meta:
         ordering = ["name", "email"]
 
@@ -178,6 +180,9 @@ class AlertWebhook(models.Model):
     user = models.ForeignKey(CustomUser, related_name="alert_webhook", on_delete=models.CASCADE)
     name = models.CharField(max_length=100, null=True, blank=True)
     webhook = models.URLField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f"{self.user.username} - {self.webhook}"
 
     class Meta:
         ordering = ["name", "webhook"]

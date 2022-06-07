@@ -52,11 +52,6 @@ urlpatterns = [
         name="config-detail",
     ),
     path(
-        "host/<pk>/info/",
-        login_required(views.HostInfoDetailView.as_view()),
-        name="host-info",
-    ),
-    path(
         "host/<pk>/metric/",
         login_required(views.MetricListView.as_view()),
         name="metric-list",

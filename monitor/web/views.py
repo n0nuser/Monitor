@@ -150,7 +150,7 @@ class HostUpdateView(UpdateView):
     template_name = "common/edit.html"
 
     def get_queryset(self):
-        return super().get_queryset().filter(agent=self.kwargs["pk"], agent__user=self.request.user)
+        return Agent.objects.filter(token=self.kwargs["pk"], user=self.request.user)
 
 
 class HostDeleteView(DeleteView):
@@ -159,7 +159,7 @@ class HostDeleteView(DeleteView):
     template_name = "common/delete.html"
 
     def get_queryset(self):
-        return super().get_queryset().filter(agent=self.kwargs["pk"], agent__user=self.request.user)
+        return Agent.objects.filter(token=self.kwargs["pk"], user=self.request.user)
 
 
 class HostListView(ListView):
@@ -180,9 +180,20 @@ class HostDetailView(DetailView):
 
     def get_context_data(self, **kwargs):  # sourcery skip: extract-method
         context = super().get_context_data(**kwargs)
-        metrics = Metric.objects.filter(agent=self.kwargs["pk"], agent__user=self.request.user).annotate(
-            date=TruncMinute("created")
-        )
+        metrics = Metric.objects.filter(agent=self.kwargs["pk"], agent__user=self.request.user)
+
+        if not metrics:
+            context["last"] = None
+            context["lastDisk"] = None
+            context["chartData"] = None
+            context["software"] = None
+            context["hardware"] = None
+            context["disk"] = None
+            context["ip"] = None
+            return context
+
+        lastMetric = vars(metrics.last())
+        metrics = metrics.annotate(date=TruncMinute("created"))
 
         try:
             lastMetric, metricsRangeDate = self._rangeDate(self.request, metrics)
@@ -196,73 +207,8 @@ class HostDetailView(DetailView):
             context["lastDisk"] = None
             context["chartData"] = None
 
-        return context
-
-    def _rangeDate(self, request, metrics):
-        lastMetric = vars(metrics.last())
-        startDate = request.GET.get("start")
-        endDate = request.GET.get("end")
-        if startDate and endDate:
-            date_from = datetime.strptime(startDate, "%Y-%m-%d")
-            date_to = datetime.strptime(endDate, "%Y-%m-%d")
-        else:
-            date_to = lastMetric["created"]
-            date_from = date_to - timedelta(hours=1)
-        return lastMetric, metrics.filter(created__range=(date_from, date_to))
-
-    def _lastDisk(self, lastMetric):
-        free = 0.0
-        used = 0.0
-        total = 0.0
-        diskData = lastMetric["metrics"]["disk"]
-        for partition in diskData.keys():
-            free = free + diskData[partition]["free"]
-            used = used + diskData[partition]["used"]
-            total = total + diskData[partition]["total"]
-        return {
-            "free": free,
-            "free_formatted": format_bytes(free),
-            "used": used,
-            "used_formatted": format_bytes(used),
-            "total": total,
-            "total_formatted": format_bytes(total),
-        }
-
-    def _chartData(self, metrics):
-        chartData = []
-        for index, i in enumerate(metrics):
-            chartData.append(
-                {
-                    "date": vars(i)["date"],
-                    "cpu": vars(i)["metrics"]["cpu_percent"],
-                    "ram": vars(i)["metrics"]["ram"]["percent"],
-                }
-            )
-            with contextlib.suppress(TypeError):
-                battery_percent = vars(i)["metrics"]["battery"]["percent"]
-                chartData[index]["battery"] = round(battery_percent, 2)
-        return json.dumps(list(chartData), cls=DjangoJSONEncoder)
-
-
-class HostInfoDetailView(DetailView):
-    context_object_name = "host"
-    model = Agent
-    template_name = "host/info.html"
-
-    def get_object(self, queryset=None):
-        return get_object_or_404(Agent, token=self.kwargs["pk"], user=self.request.user)
-
-    def get_context_data(self, **kwargs):
-        """
-        This has been overridden to add `Metric` to the template context,
-        now you can use {{ metric }} within the template
-        """
-        context = super().get_context_data(**kwargs)
-
         # Get the latest metric
         with contextlib.suppress(TypeError):
-            lastMetric = vars(Metric.objects.filter(agent=self.kwargs["pk"], agent__user=self.request.user).last())
-
             software = {
                 # Software
                 "Hostname": lastMetric["metrics"]["host"],
@@ -311,7 +257,53 @@ class HostInfoDetailView(DetailView):
                     "Network Mask": netmask,
                 }
             context["ip"] = nic_adapters
+
         return context
+
+    def _rangeDate(self, request, metrics):
+        lastMetric = vars(metrics.last())
+        startDate = request.GET.get("start")
+        endDate = request.GET.get("end")
+        if startDate and endDate:
+            date_from = datetime.strptime(startDate, "%Y-%m-%d")
+            date_to = datetime.strptime(endDate, "%Y-%m-%d")
+        else:
+            date_to = lastMetric["created"]
+            date_from = date_to - timedelta(hours=1)
+        return lastMetric, metrics.filter(created__range=(date_from, date_to))
+
+    def _lastDisk(self, lastMetric):
+        free = 0.0
+        used = 0.0
+        total = 0.0
+        diskData = lastMetric["metrics"]["disk"]
+        for partition in diskData.keys():
+            free = free + diskData[partition]["free"]
+            used = used + diskData[partition]["used"]
+            total = total + diskData[partition]["total"]
+        return {
+            "free": free,
+            "free_formatted": format_bytes(free),
+            "used": used,
+            "used_formatted": format_bytes(used),
+            "total": total,
+            "total_formatted": format_bytes(total),
+        }
+
+    def _chartData(self, metrics):
+        chartData = []
+        for index, i in enumerate(metrics):
+            chartData.append(
+                {
+                    "date": vars(i)["date"],
+                    "cpu": vars(i)["metrics"]["cpu_percent"],
+                    "ram": vars(i)["metrics"]["ram"]["percent"],
+                }
+            )
+            with contextlib.suppress(TypeError):
+                battery_percent = vars(i)["metrics"]["battery"]["percent"]
+                chartData[index]["battery"] = round(battery_percent, 2)
+        return json.dumps(list(chartData), cls=DjangoJSONEncoder)
 
 
 ######################################################################################################################

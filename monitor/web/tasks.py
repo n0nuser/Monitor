@@ -1,9 +1,10 @@
+from django.conf import settings
 from django.core.mail import send_mail, BadHeaderError
 from django.template import loader
+from django.utils import timezone as datetime
 from django_rq import job, get_scheduler
 from monitor.settings import EMAIL_HOST_USER
 from web.models import AgentConfig, AlertEmail, AlertWebhook, Metric, Alert, Agent
-import datetime
 import logging
 import requests
 
@@ -20,22 +21,49 @@ def remove_old():
             each.delete()
 
 
-def verify_status(agent, real_metric_count, real_alert_count, normal_metric_count, interval, quotient, status):
+def verify_status(
+    agent, real_metric_count, real_alert_count, normal_metric_count, interval, post_interval, quotient, status
+):
     if real_metric_count < normal_metric_count:
         agent.status = status
         agent.status_reason = (
-            "Agent received less than " + str(normal_metric_count) + " metrics in " + str(interval) + " minutes."
+            "Agent received "
+            + str(real_metric_count)
+            + " of "
+            + str(int(normal_metric_count))
+            + " metrics in "
+            + str(interval)
+            + " minutes. Post Interval is "
+            + str(post_interval)
+            + " seconds."
         )
         return True
     elif real_metric_count == 0:
         agent.status = status
-        agent.status_reason = "Agent received no metrics in " + str(interval) + " minutes."
+        agent.status_reason = (
+            "Agent received no metrics in "
+            + str(interval)
+            + " minutes. Should have received at least "
+            + str(normal_metric_count)
+            + " metrics due to the post interval being "
+            + str(post_interval)
+            + " seconds."
+        )
         return True
     elif real_alert_count and (real_alert_count >= quotient * normal_metric_count):
         agent.status = status
-        agent.status_reason = "Agent received " + str(real_alert_count) + " alerts in " + str(interval) + " minutes."
+        agent.status_reason = (
+            "Agent received "
+            + str(real_alert_count)
+            + " alerts in "
+            + str(interval)
+            + " minutes. It should be less than "
+            + str(quotient * normal_metric_count)
+            + " alerts."
+        )
         return True
     else:
+        print("VERIFY STATUS - OK!!!!!!")
         agent.status = "OK"
         agent.status_reason = ""
         return False
@@ -62,18 +90,18 @@ def check_status():
         post_interval = config.metrics_post_interval
         bad_time_interval = config.bad_time_interval
         normal_metric_count_in_bad_interval = (bad_time_interval * 60) / post_interval
-        bad_time_interval_datetime = datetime.now() - datetime.timedelta(minutes=bad_time_interval)
-        real_metric_count_in_bad_interval = metrics(created__lte=bad_time_interval_datetime).count()
+        bad_time_interval_datetime = datetime.datetime.now() - datetime.timedelta(minutes=bad_time_interval)
+        real_metric_count_in_bad_interval = metrics.filter(created__lte=bad_time_interval_datetime).count()
 
         warning_time_interval = config.warning_time_interval
         normal_metric_count_in_warning_interval = (warning_time_interval * 60) / post_interval
-        warning_time_interval_datetime = datetime.now() - datetime.timedelta(minutes=warning_time_interval)
-        real_metric_count_in_warning_interval = metrics(created__lte=warning_time_interval_datetime).count()
+        warning_time_interval_datetime = datetime.datetime.now() - datetime.timedelta(minutes=warning_time_interval)
+        real_metric_count_in_warning_interval = metrics.filter(created__lte=warning_time_interval_datetime).count()
 
         alerts = Alert.objects.filter(agent=agent)
         if alerts:
-            real_alert_count_in_bad_interval = alerts(created__lte=bad_time_interval_datetime).count()
-            real_alert_count_in_warning_interval = alerts(created__lte=warning_time_interval_datetime).count()
+            real_alert_count_in_bad_interval = alerts.filter(created__lte=bad_time_interval_datetime).count()
+            real_alert_count_in_warning_interval = alerts.filter(created__lte=warning_time_interval_datetime).count()
         else:
             real_alert_count_in_bad_interval = None
             real_alert_count_in_warning_interval = None
@@ -85,6 +113,7 @@ def check_status():
             real_alert_count_in_warning_interval,
             normal_metric_count_in_warning_interval,
             warning_time_interval,
+            post_interval,
             quotient_alert,
             "WR",
         )
@@ -95,6 +124,7 @@ def check_status():
                 real_alert_count_in_bad_interval,
                 normal_metric_count_in_bad_interval,
                 bad_time_interval,
+                post_interval,
                 quotient_alert,
                 "BA",
             )
@@ -105,7 +135,7 @@ def check_status():
             html_content = loader.render_to_string(
                 "email/default.html",
                 {
-                    "year": datetime.now().year,
+                    "year": datetime.datetime.now().year,
                     "company": "Monitor",
                     "address": "Salamanca, Spain",
                     "url": "https://nonuser.es",
@@ -113,25 +143,32 @@ def check_status():
                     "message": agent.status_reason,
                 },
             )
-            emails = list(AlertEmail.objects.filter(user=agent.user))
+            emails = list(AlertEmail.objects.filter(user=agent.user).values_list("email", flat=True))
+            print(emails)
             send_email_task(
                 to=emails,
-                subject="Alert on " + agent.name + "(" + end_status + ")",
+                subject="Alert on " + agent.name + " (" + end_status + ")",
                 html_message=html_content,
             )
             for each in AlertWebhook.objects.filter(user=agent.user):
                 requests.post(
-                    each.url,
-                    json={"content": f"{datetime.datetime.now()} {agent.name} - {end_status}: {agent.status_reason}"},
+                    each.webhook,
+                    json={
+                        "content": f"{datetime.datetime.now()} | {agent.name} - **{end_status.upper()}**: {agent.status_reason}"
+                    },
                 )
         else:
+            print("OK!!!!!!")
             agent.status = "OK"
             agent.status_reason = ""
+
+        agent.save()
+        print(Agent.objects.get(token=agent.token).__dict__)
 
 
 @job("default", retry=5)
 def send_email_task(to: list, subject: str, message: str = "", html_message: str = ""):
-    logger.info(f"from={EMAIL_HOST_USER}, {to=}, {subject=}, {message=}")
+    logger.info(f"from={EMAIL_HOST_USER}, {to=}, {subject=}")
     try:
         logger.info("About to send_mail")
         send_mail(subject, message, EMAIL_HOST_USER, to, html_message=html_message)
