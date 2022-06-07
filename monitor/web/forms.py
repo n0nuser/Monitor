@@ -134,18 +134,20 @@ class AgentConfigForm(forms.ModelForm):
 class AlertEmailForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["name"].widget.attrs.update({"class": "form-control"})
         self.fields["email"].widget.attrs.update({"class": "form-control"})
 
     class Meta:
         model = AlertEmail
-        fields = ("email",)
+        fields = ("name", "email")
 
 
 class AlertWebhookForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["name"].widget.attrs.update({"class": "form-control"})
         self.fields["webhook"].widget.attrs.update({"class": "form-control"})
 
     class Meta:
         model = AlertWebhook
-        fields = ("webhook",)
+        fields = ("name", "webhook")

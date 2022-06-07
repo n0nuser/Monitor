@@ -57,21 +57,9 @@
         </div>
       </a>
     </div>
-    <div class="col-lg col-md-6 col-sm-6 mb-4">
-      <a href="{% url 'host-info' agent.token %}">
-        <div class="stats-small stats-small--1 card card-small btn btn-sm btn-white">
-          <div class="card-body p-0 d-flex">
-            <div class="d-flex flex-column m-auto">
-              <div class="stats-small__data text-center">
-                <h6 class="stats-small__value count my-3">System Information</h6>
-              </div>
-            </div>
-          </div>
-        </div>
-      </a>
-    </div>
   </div>
 
+  {% if last %}
   <div class="row">
     <!-- Users Stats -->
     <div class="col-lg-8 col-md-12 col-sm-12 mb-4">
@@ -120,20 +108,16 @@
     </div>
     <!-- End Disk Performance -->
   </div>
+  <div class="row no-gutters mb-3 border-bottom"></div>
 
   <!-- Default Light Table -->
   <div class="row">
     <div class="col">
-      <div class="card card-small mb-4">
-        <div class="card-header border-bottom">
-          <h6 class="m-0">Data</h6>
-        </div>
+      <div class="card main-content-container container-fluid mb-4">
         <div class="card-body p-0 pb-3 text-center">
           <div class="table-responsive scrollbar">
-            <h6 class="m-0">Status: {{ agent.status }}</h6>
-            <h6 class="m-0">Reason: {{ agent.status_reason }}</h6>
             <table class="table mb-0">
-              <thead class="bg-light">
+              <thead class="">
                 <tr>
                   <th scope="col" class="border-0">Hostname</th>
                   <th scope="col" class="border-0">Uptime</th>
@@ -162,32 +146,89 @@
     </div>
   </div>
   <!-- End Default Light Table -->
+  {% endif %} 
 
-  <div class="row">
-    <div class="col">
-      <div class="card card-small mb-4">
-        <div class="card-header border-bottom">
-          <h6 class="m-0">Status {{ agent.status }}</h6>
-          <h6 class="m-0">Reason: {{ agent.status_reason }}</h6>
+  <div class="card main-content-container container-fluid px-4">
+    
+    <div class="page-header row no-gutters py-2"></div>
+    <h4>Status</h4>
+    <ol class="list-group list-group-numbered mb-2">
+      <li class="list-group-item d-flex justify-content-between align-items-start">
+        <div class="ms-2 me-auto">
+          <span class="font-weight-bold">{{ agent.status }}:</span> {{ agent.status_reason }}
         </div>
-        <div class="card-body p-0 pb-3 text-center">
-          <div class="table-responsive scrollbar">
-            
+      </li>
+    </ol>
+
+    {% if software %}
+    <h4>Software</h4>
+    <ol class="list-group list-group-numbered mb-2">
+      {% for key, values in software.items %}
+      <li class="list-group-item d-flex justify-content-between align-items-start">
+        <div class="ms-2 me-auto">
+          <span class="font-weight-bold">{{ key }}:</span> {{ values }}
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+    {% endif %}
+
+    {% if hardware %}
+    <h4>Hardware</h4>
+    <ol class="list-group list-group-numbered mb-2">
+      {% for key, values in hardware.items %}
+      <li class="list-group-item d-flex justify-content-between align-items-start">
+        <div class="ms-2 me-auto">
+          <span class="font-weight-bold">{{ key }}:</span> {{ values }}
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+    {% endif %}
+
+    {% if disk %}
+    <h4>Partitions</h4>
+    <ol class="list-group list-group-numbered mb-2">
+      {% for key, values in disk.items %}
+      <li class="list-group-item d-flex justify-content-between align-items-start">
+        <div class="ms-2 me-auto">
+          <div class="font-weight-bold">{{ key }}</div>
+          {% for key2, values2 in values.items %}
+          <div class="ms-2 me-auto ml-4">
+            <span class="font-weight-bold">{{ key2 }}:</span> {{ values2 }}
           </div>
+          {% endfor %}
         </div>
-      </div>
-    </div>
+      </li>
+      {% endfor %}
+    </ol>
+    {% endif %}
+
+    {% if ip %}
+    <h4>Network Interfaces</h4>
+    <ol class="list-group list-group-numbered mb-2">
+      {% for key, values in ip.items %}
+      <li class="list-group-item d-flex justify-content-between align-items-start">
+        <div class="ms-2 me-auto">
+          <div class="font-weight-bold">{{ key }}</div>
+          {% for key2, values2 in values.items %}
+          <div class="ms-2 me-auto ml-4">
+            <span class="font-weight-bold">{{ key2 }}:</span> {{ values2 }}
+          </div>
+          {% endfor %}
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+    {% endif %}
   </div>
-
-  <div class="row no-gutters mb-3 border-bottom"></div>
-
-  
 </div>
 
 {% endblock content %}
 
 <!-- Specific Page JS goes HERE  -->
 {% block javascripts %}
+{% if last %}
 <script>
   const views = {{ chartData | safe }};
   var cpuData = [];
@@ -348,5 +389,5 @@
   );
 
 </script>
-
+{% endif %}
 {% endblock javascripts %}
