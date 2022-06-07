@@ -1,3 +1,4 @@
+import email
 import os
 import binascii
 from django.db import models
@@ -45,7 +46,6 @@ class Agent(models.Model):
     )
     status = models.CharField(max_length=20, default="OK", blank=True, choices=STATUS_CHOICES)
     status_reason = models.CharField(max_length=200, default="", blank=True)
-    
 
     def __str__(self) -> str:
         return self.name
@@ -167,12 +167,20 @@ class Alert(models.Model):
 
 class AlertEmail(models.Model):
     user = models.ForeignKey(CustomUser, related_name="alert_email", on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["name", "email"]
 
 
 class AlertWebhook(models.Model):
     user = models.ForeignKey(CustomUser, related_name="alert_webhook", on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, null=True, blank=True)
     webhook = models.URLField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["name", "webhook"]
 
 ######################################################################################################################
 
@@ -181,6 +189,12 @@ class AlertWebhook(models.Model):
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
+
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_alert_email(sender, instance=None, created=False, **kwargs):
+    if created:
+        AlertEmail.objects.create(user=instance, name="Default", email=instance.email)
 
 
 @receiver(post_save, sender=Agent)

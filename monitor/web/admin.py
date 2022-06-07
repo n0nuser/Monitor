@@ -4,7 +4,7 @@ from django.contrib import admin
 # pyright: reportMissingImports=false
 
 # Register your models here.
-from web.models import AgentConfig, CustomUser, Agent, Metric, Alert
+from web.models import AgentConfig, AlertEmail, AlertWebhook, CustomUser, Agent, Metric, Alert
 from import_export.admin import ImportExportModelAdmin
 from import_export import resources
 
@@ -74,3 +74,31 @@ class AlertResource(resources.ModelResource):
 class AlertAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     resource_class = AlertResource
     list_filter = ("agent__name", "created")
+
+
+################################################################
+
+
+class AlertEmailResource(resources.ModelResource):
+    class Meta:
+        model = AlertEmail
+
+
+@admin.register(AlertEmail)
+class AlertEmailAdmin(ImportExportModelAdmin, admin.ModelAdmin):
+    resource_class = AlertEmailResource
+    list_filter = ("user", "email")
+
+
+################################################################
+
+
+class AlertWebhookResource(resources.ModelResource):
+    class Meta:
+        model = AlertWebhook
+
+
+@admin.register(AlertWebhook)
+class AlertWebhookAdmin(ImportExportModelAdmin, admin.ModelAdmin):
+    resource_class = AlertWebhookResource
+    list_filter = ("user", "webhook")

@@ -18,6 +18,61 @@
   <!-- End Page Header -->
 
   <div class="row">
+    <div class="col-lg col-md-6 col-sm-6 mb-4">
+      <a href="{% url 'config-detail' agent.token %}">
+        <div class="stats-small stats-small--1 card card-small btn btn-sm btn-white">
+          <div class="card-body p-0 d-flex">
+            <div class="d-flex flex-column m-auto">
+              <div class="stats-small__data text-center">
+                <h6 class="stats-small__value count my-3">View Config</h6>
+              </div>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-lg col-md-6 col-sm-6 mb-4">
+      <a href="{% url 'host-execute' agent.token %}">
+        <div class="stats-small stats-small--1 card card-small btn btn-sm btn-white">
+          <div class="card-body p-0 d-flex">
+            <div class="d-flex flex-column m-auto">
+              <div class="stats-small__data text-center">
+                <h6 class="stats-small__value count my-3">CMD</h6>
+              </div>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-lg col-md-6 col-sm-6 mb-4">
+      <a href="{% url 'metric-list' agent.token %}">
+        <div class="stats-small stats-small--1 card card-small btn btn-sm btn-white">
+          <div class="card-body p-0 d-flex">
+            <div class="d-flex flex-column m-auto">
+              <div class="stats-small__data text-center">
+                <h6 class="stats-small__value count my-3">Metrics</h6>
+              </div>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-lg col-md-6 col-sm-6 mb-4">
+      <a href="{% url 'host-info' agent.token %}">
+        <div class="stats-small stats-small--1 card card-small btn btn-sm btn-white">
+          <div class="card-body p-0 d-flex">
+            <div class="d-flex flex-column m-auto">
+              <div class="stats-small__data text-center">
+                <h6 class="stats-small__value count my-3">System Information</h6>
+              </div>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
     <!-- Users Stats -->
     <div class="col-lg-8 col-md-12 col-sm-12 mb-4">
       <div class="card card-small">
@@ -75,6 +130,8 @@
         </div>
         <div class="card-body p-0 pb-3 text-center">
           <div class="table-responsive scrollbar">
+            <h6 class="m-0">Status: {{ agent.status }}</h6>
+            <h6 class="m-0">Reason: {{ agent.status_reason }}</h6>
             <table class="table mb-0">
               <thead class="bg-light">
                 <tr>
@@ -106,62 +163,25 @@
   </div>
   <!-- End Default Light Table -->
 
-  <div class="row no-gutters mb-3 border-bottom"></div>
-
   <div class="row">
-    <div class="col-lg col-md-6 col-sm-6 mb-4">
-      <a href="{% url 'config-detail' agent.token %}">
-        <div class="stats-small stats-small--1 card card-small btn btn-sm btn-white">
-          <div class="card-body p-0 d-flex">
-            <div class="d-flex flex-column m-auto">
-              <div class="stats-small__data text-center">
-                <h6 class="stats-small__value count my-3">View Config</h6>
-              </div>
-            </div>
+    <div class="col">
+      <div class="card card-small mb-4">
+        <div class="card-header border-bottom">
+          <h6 class="m-0">Status {{ agent.status }}</h6>
+          <h6 class="m-0">Reason: {{ agent.status_reason }}</h6>
+        </div>
+        <div class="card-body p-0 pb-3 text-center">
+          <div class="table-responsive scrollbar">
+            
           </div>
         </div>
-      </a>
-    </div>
-    <div class="col-lg col-md-6 col-sm-6 mb-4">
-      <a href="{% url 'host-execute' agent.token %}">
-        <div class="stats-small stats-small--1 card card-small btn btn-sm btn-white">
-          <div class="card-body p-0 d-flex">
-            <div class="d-flex flex-column m-auto">
-              <div class="stats-small__data text-center">
-                <h6 class="stats-small__value count my-3">CMD</h6>
-              </div>
-            </div>
-          </div>
-        </div>
-      </a>
-    </div>
-    <div class="col-lg col-md-6 col-sm-6 mb-4">
-      <a href="{% url 'metric-list' agent.token %}">
-        <div class="stats-small stats-small--1 card card-small btn btn-sm btn-white">
-          <div class="card-body p-0 d-flex">
-            <div class="d-flex flex-column m-auto">
-              <div class="stats-small__data text-center">
-                <h6 class="stats-small__value count my-3">Metrics</h6>
-              </div>
-            </div>
-          </div>
-        </div>
-      </a>
-    </div>
-    <div class="col-lg col-md-6 col-sm-6 mb-4">
-      <a href="{% url 'host-info' agent.token %}">
-        <div class="stats-small stats-small--1 card card-small btn btn-sm btn-white">
-          <div class="card-body p-0 d-flex">
-            <div class="d-flex flex-column m-auto">
-              <div class="stats-small__data text-center">
-                <h6 class="stats-small__value count my-3">System Information</h6>
-              </div>
-            </div>
-          </div>
-        </div>
-      </a>
+      </div>
     </div>
   </div>
+
+  <div class="row no-gutters mb-3 border-bottom"></div>
+
+  
 </div>
 
 {% endblock content %}

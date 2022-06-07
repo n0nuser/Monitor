@@ -8,7 +8,7 @@ from web import views
 # pyright: reportMissingImports=false
 
 urlpatterns = [
-    path("", login_required(views.AlertListView.as_view()), name="alert-list"),
+    path("", login_required(views.AlertListView.as_view()), name="home"),
     path("accounts/login/", views.login_view, name="login"),
     path("accounts/register/", views.register_user, name="register"),
     path("accounts/logout/", LogoutView.as_view(), name="logout"),
@@ -70,6 +70,19 @@ urlpatterns = [
         "host/<pk>/metric/<pk1>/delete/",
         login_required(views.MetricDeleteView.as_view()),
         name="metric-delete",
+    ),
+    path("notification/", login_required(views.NotificationListView.as_view()), name="notification-list"),
+    path("email/add/", login_required(views.EmailCreateView.as_view()), name="email-add"),
+    path(
+        "email/<pk>/delete/",
+        login_required(views.EmailDeleteView.as_view()),
+        name="email-delete",
+    ),
+    path("webhook/add/", login_required(views.WebhookCreateView.as_view()), name="webhook-add"),
+    path(
+        "webhook/<pk>/delete/",
+        login_required(views.WebhookDeleteView.as_view()),
+        name="webhook-delete",
     ),
 ]
 

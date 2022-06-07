@@ -1,10 +1,7 @@
 import requests
 from django import forms
-from web.models import CustomUser, Agent, AgentConfig
+from web.models import AlertEmail, AlertWebhook, CustomUser, Agent, AgentConfig
 from django.contrib.auth.forms import UserCreationForm
-
-# pyright: reportMissingModuleSource=false
-# pyright: reportMissingImports=false
 
 
 class LoginForm(forms.Form):
@@ -132,3 +129,23 @@ class AgentConfigForm(forms.ModelForm):
             "uvicorn_timeout_keep_alive": "Timeout of the uvicorn server",
             "uvicorn_workers": "Workers of the uvicorn server",
         }
+
+
+class AlertEmailForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["email"].widget.attrs.update({"class": "form-control"})
+
+    class Meta:
+        model = AlertEmail
+        fields = ("email",)
+
+
+class AlertWebhookForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["webhook"].widget.attrs.update({"class": "form-control"})
+
+    class Meta:
+        model = AlertWebhook
+        fields = ("webhook",)

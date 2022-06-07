@@ -1,22 +1,18 @@
 {% extends "layouts/base.html" %}
 
-{% block title %} Edit config {% endblock %}
+{% block title %} Add {% endblock %}
 
 <!-- Specific Page CSS goes HERE  -->
-{% block stylesheets %}
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.6/quill.snow.css">
-</head>
-
-{% endblock stylesheets %}
+{% block stylesheets %}{% endblock stylesheets %}
 
 {% block content %}
+
 <div class="main-content-container container-fluid px-4">
   <!-- Page Header -->
   <div class="page-header row no-gutters py-4">
     <div class="col-12 col-sm-4 text-center text-sm-left mb-0">
-      <span class="text-uppercase page-subtitle">Monitor Hosts</span>
-      <h3 class="page-title">Config Generator</h3>
+      <span class="text-uppercase page-subtitle">Monitor</span>
+      <h3 class="page-title">Add</h3>
     </div>
   </div>
   <!-- End Page Header -->
@@ -28,10 +24,10 @@
           <li class="list-group-item p-3">
             <div class="row">
               <div class="col">
-                <form role="form" method="post" class="pt-3">
+                <form role="form" method="post" action="" class="pt-3">
                   {% csrf_token %}
                   {{ form.as_p }}
-                  <button type="submit" name="add" class="btn btn-accent">Save config</button>
+                  <button type="submit" name="add" class="btn btn-accent">Add</button>
                 </form>
               </div>
             </div>
@@ -46,8 +42,4 @@
 {% endblock content %}
 
 <!-- Specific Page JS goes HERE  -->
-{% block javascripts %}
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.6/quill.min.js"></script>
-
-{% endblock javascripts %}
+{% block javascripts %}{% endblock javascripts %}

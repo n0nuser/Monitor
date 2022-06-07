@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %} New Host {% endblock %}
+{% block title %} Edit {% endblock %}
 
 <!-- Specific Page CSS goes HERE  -->
 {% block stylesheets %}{% endblock stylesheets %}
@@ -11,8 +11,8 @@
   <!-- Page Header -->
   <div class="page-header row no-gutters py-4">
     <div class="col-12 col-sm-4 text-center text-sm-left mb-0">
-      <span class="text-uppercase page-subtitle">Monitor Hosts</span>
-      <h3 class="page-title">Add New Host</h3>
+      <span class="text-uppercase page-subtitle">Monitor</span>
+      <h3 class="page-title">Edit</h3>
     </div>
   </div>
   <!-- End Page Header -->
@@ -27,7 +27,7 @@
                 <form role="form" method="post" action="" class="pt-3">
                   {% csrf_token %}
                   {{ form.as_p }}
-                  <button type="submit" name="add" class="btn btn-accent">Create Host</button>
+                  <button type="submit" name="add" class="btn btn-accent">Edit</button>
                 </form>
               </div>
             </div>

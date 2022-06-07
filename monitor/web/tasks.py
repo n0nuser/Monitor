@@ -1,7 +1,8 @@
 from django.core.mail import send_mail, BadHeaderError
+from django.template import loader
 from django_rq import job, get_scheduler
 from monitor.settings import EMAIL_HOST_USER
-from web.models import AgentConfig, Metric, Alert, Agent
+from web.models import AgentConfig, AlertEmail, AlertWebhook, Metric, Alert, Agent
 import datetime
 import logging
 import requests
@@ -19,6 +20,27 @@ def remove_old():
             each.delete()
 
 
+def verify_status(agent, real_metric_count, real_alert_count, normal_metric_count, interval, quotient, status):
+    if real_metric_count < normal_metric_count:
+        agent.status = status
+        agent.status_reason = (
+            "Agent received less than " + str(normal_metric_count) + " metrics in " + str(interval) + " minutes."
+        )
+        return True
+    elif real_metric_count == 0:
+        agent.status = status
+        agent.status_reason = "Agent received no metrics in " + str(interval) + " minutes."
+        return True
+    elif real_alert_count and (real_alert_count >= quotient * normal_metric_count):
+        agent.status = status
+        agent.status_reason = "Agent received " + str(real_alert_count) + " alerts in " + str(interval) + " minutes."
+        return True
+    else:
+        agent.status = "OK"
+        agent.status_reason = ""
+        return False
+
+
 @job
 def check_status():
     agents = Agent.objects.all()
@@ -31,69 +53,84 @@ def check_status():
 
     for agent in agents:
         config = AgentConfig.objects.get(agent=agent)
-        post_interval = config.metrics_post_interval
-
         metrics = Metric.objects.filter(agent=agent)
+        if metrics.count() == 0:
+            agent.status = "BA"
+            agent.status_reason = "Host hasn't sent any metrics yet."
+            continue
 
-        normal_metric_count_in_bad_interval = (config.bad_time_interval * 60) / post_interval
-        normal_metric_count_in_warning_interval = (config.warning_time_interval * 60) / post_interval
+        post_interval = config.metrics_post_interval
+        bad_time_interval = config.bad_time_interval
+        normal_metric_count_in_bad_interval = (bad_time_interval * 60) / post_interval
+        bad_time_interval_datetime = datetime.now() - datetime.timedelta(minutes=bad_time_interval)
+        real_metric_count_in_bad_interval = metrics(created__lte=bad_time_interval_datetime).count()
 
-        bad_time_interval = datetime.now() - datetime.timedelta(minutes=config.bad_time_interval)
-        warning_time_interval = datetime.now() - datetime.timedelta(minutes=config.warning_time_interval)
-
-        real_metric_count_in_bad_interval = metrics(created__lte=config.bad_time_interval).count()
-        real_metric_count_in_warning_interval = metrics(created__lte=config.warning_time_interval).count()
+        warning_time_interval = config.warning_time_interval
+        normal_metric_count_in_warning_interval = (warning_time_interval * 60) / post_interval
+        warning_time_interval_datetime = datetime.now() - datetime.timedelta(minutes=warning_time_interval)
+        real_metric_count_in_warning_interval = metrics(created__lte=warning_time_interval_datetime).count()
 
         alerts = Alert.objects.filter(agent=agent)
-        real_alert_count_in_bad_interval = alerts(created__lte=bad_time_interval).count()
-        real_alert_count_in_warning_interval = alerts(created__lte=warning_time_interval).count()
+        if alerts:
+            real_alert_count_in_bad_interval = alerts(created__lte=bad_time_interval_datetime).count()
+            real_alert_count_in_warning_interval = alerts(created__lte=warning_time_interval_datetime).count()
+        else:
+            real_alert_count_in_bad_interval = None
+            real_alert_count_in_warning_interval = None
 
-        if real_metric_count_in_bad_interval < normal_metric_count_in_bad_interval:
-            agent.status = "BA"
-            agent.status_reason = (
-                "Agent received less than "
-                + str(normal_metric_count_in_bad_interval)
-                + " metrics in "
-                + str(config.bad_time_interval)
-                + " minutes."
+        start_status = agent.status
+        warning_status = verify_status(
+            agent,
+            real_metric_count_in_warning_interval,
+            real_alert_count_in_warning_interval,
+            normal_metric_count_in_warning_interval,
+            warning_time_interval,
+            quotient_alert,
+            "WR",
+        )
+        if warning_status:
+            verify_status(
+                agent,
+                real_metric_count_in_bad_interval,
+                real_alert_count_in_bad_interval,
+                normal_metric_count_in_bad_interval,
+                bad_time_interval,
+                quotient_alert,
+                "BA",
             )
-        elif real_metric_count_in_warning_interval == 0:
-            agent.status = "BA"
-            agent.status_reason = "Agent received no metrics in " + str(config.warning_time_interval) + " minutes."
-        elif real_alert_count_in_bad_interval >= quotient_alert * normal_metric_count_in_bad_interval:
-            agent.status = "BA"
-            agent.status_reason = (
-                "Agent received "
-                + str(real_alert_count_in_bad_interval)
-                + " alerts in "
-                + str(config.bad_time_interval)
-                + " minutes."
+        end_status = agent.status
+
+        if start_status != end_status != "OK":
+            end_status = "Warning" if end_status == "WR" else "Bad"
+            html_content = loader.render_to_string(
+                "email/default.html",
+                {
+                    "year": datetime.now().year,
+                    "company": "Monitor",
+                    "address": "Salamanca, Spain",
+                    "url": "https://nonuser.es",
+                    "header": f"{end_status} status on {agent.name}",
+                    "message": agent.status_reason,
+                },
             )
-        elif real_metric_count_in_warning_interval < normal_metric_count_in_warning_interval:
-            agent.status = "WR"
-            agent.status_reason = (
-                "Agent received less than "
-                + str(normal_metric_count_in_warning_interval)
-                + " metrics in "
-                + str(config.warning_time_interval)
-                + " minutes."
+            emails = list(AlertEmail.objects.filter(user=agent.user))
+            send_email_task(
+                to=emails,
+                subject="Alert on " + agent.name + "(" + end_status + ")",
+                html_message=html_content,
             )
-        elif real_alert_count_in_warning_interval >= quotient_alert * normal_metric_count_in_warning_interval:
-            agent.status = "WR"
-            agent.status_reason = (
-                "Agent received "
-                + str(real_alert_count_in_warning_interval)
-                + " alerts in "
-                + str(config.warning_time_interval)
-                + " minutes."
-            )
+            for each in AlertWebhook.objects.filter(user=agent.user):
+                requests.post(
+                    each.url,
+                    json={"content": f"{datetime.datetime.now()} {agent.name} - {end_status}: {agent.status_reason}"},
+                )
         else:
             agent.status = "OK"
             agent.status_reason = ""
 
 
-@job('default', retry=5)
-def send_email_task(to: list, subject: str, message: str, html_message: str):
+@job("default", retry=5)
+def send_email_task(to: list, subject: str, message: str = "", html_message: str = ""):
     logger.info(f"from={EMAIL_HOST_USER}, {to=}, {subject=}, {message=}")
     try:
         logger.info("About to send_mail")
@@ -106,7 +143,11 @@ def send_email_task(to: list, subject: str, message: str, html_message: str):
 
 @job
 def test_post():
-    webhook = "https://discord.com/api/webhooks/982937826679205910/qxLyAGZ4AnZAuEbyAaYcVGWBaU8ATu0aqXgrvHN643P8VZDTQYEMANkV_czG9_zZCGJD"
+    webhook = (
+        "https://discord.com/api/webhooks/982937826679205910/"
+        + "qxLyAGZ4AnZAuEbyAaYcVGWBaU8ATu0aqXgrvHN643P8VZDTQYEMANkV_czG9_zZCGJD"
+    )
+
     requests.post(webhook, json={"content": "Prueba ({})".format(datetime.datetime.now())})
 
 

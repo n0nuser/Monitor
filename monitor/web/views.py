@@ -22,8 +22,8 @@ import json
 # pyright: reportMissingModuleSource=false
 # pyright: reportMissingImports=false
 
-from .models import Agent, AgentConfig, Metric, Alert, CustomUser
-from .forms import AgentConfigForm, ExecuteForm, LoginForm, SignUpForm, AgentForm
+from web.models import Agent, AgentConfig, AlertEmail, AlertWebhook, Metric, Alert, CustomUser
+from web.forms import AgentConfigForm, AlertEmailForm, AlertWebhookForm, ExecuteForm, LoginForm, SignUpForm, AgentForm
 
 # Create your views here.
 
@@ -92,7 +92,6 @@ def register_user(request):
             send_email_task(
                 to=[form.cleaned_data.get("email")],
                 subject="Welcome to Monitor",
-                message="",
                 html_message=html_content,
             )
             # return redirect("/login/")
@@ -130,14 +129,14 @@ def handler500(request, template_name="errors/500.html"):
     return render(request, template_name, status=500)
 
 
-###############################################################################
+######################################################################################################################
 
 
 class HostCreateView(CreateView):
     model = Agent
     form_class = AgentForm
     success_url = reverse_lazy("host-list")
-    template_name = "host/add.html"
+    template_name = "common/add.html"
 
     def form_valid(self, form):
         form.instance.user = self.request.user
@@ -148,7 +147,7 @@ class HostUpdateView(UpdateView):
     model = Agent
     form_class = AgentForm
     success_url = reverse_lazy("host-list")
-    template_name = "host/edit.html"
+    template_name = "common/edit.html"
 
     def get_queryset(self):
         return super().get_queryset().filter(agent=self.kwargs["pk"], agent__user=self.request.user)
@@ -315,7 +314,7 @@ class HostInfoDetailView(DetailView):
         return context
 
 
-###############################################################################
+######################################################################################################################
 
 
 class HostExecuteFormView(FormView):
@@ -343,13 +342,13 @@ class HostExecuteFormView(FormView):
         return HttpResponseRedirect(url)
 
 
-###############################################################################
+######################################################################################################################
 
 
 class HostConfigUpdateView(UpdateView):
     model = AgentConfig
     form_class = AgentConfigForm
-    template_name = "config/form.html"
+    template_name = "common/edit.html"
 
     def get_object(self):
         # Needed as Agent's PK was passed instead of Config's PK
@@ -429,7 +428,7 @@ def config_detail(request, pk):
     return render(request, HTML_FILE, context)
 
 
-###############################################################################
+######################################################################################################################
 
 
 class MetricListView(ListView):
@@ -508,7 +507,7 @@ class MetricDeleteView(DeleteView):
         return HttpResponseRedirect(url)
 
 
-###############################################################################
+######################################################################################################################
 
 
 class AlertListView(ListView):
@@ -611,8 +610,58 @@ class AlertDetailView(DetailView):
 
 class AlertDeleteView(DeleteView):
     model = Alert
-    success_url = reverse_lazy("alert-list")
+    success_url = reverse_lazy("home")
     template_name = "common/delete.html"
 
     def get_object(self):
         return get_object_or_404(Alert, pk=self.kwargs["pk1"], agent__user=self.request.user)
+
+
+######################################################################################################################
+
+
+class NotificationListView(ListView):
+    model = AlertEmail
+    template_name = "notification/list.html"
+
+    def get_queryset(self):
+        return AlertEmail.objects.filter(user=self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["webhook_list"] = AlertWebhook.objects.filter(user=self.request.user)
+        return context
+
+
+class EmailCreateView(CreateView):
+    model = AlertEmail
+    form_class = AlertEmailForm
+    success_url = reverse_lazy("notification-list")
+    template_name = "common/add.html"
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super().form_valid(form)
+
+
+class EmailDeleteView(DeleteView):
+    model = AlertEmail
+    success_url = reverse_lazy("notification-list")
+    template_name = "common/delete.html"
+
+
+class WebhookCreateView(CreateView):
+    model = AlertWebhook
+    form_class = AlertWebhookForm
+    success_url = reverse_lazy("notification-list")
+    template_name = "common/add.html"
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super().form_valid(form)
+
+
+class WebhookDeleteView(DeleteView):
+    model = AlertWebhook
+    success_url = reverse_lazy("notification-list")
+    template_name = "common/delete.html"
