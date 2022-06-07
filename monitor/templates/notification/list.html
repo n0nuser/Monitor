@@ -1,0 +1,118 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Hosts {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="main-content-container container-fluid px-4">
+    <!-- Page Header -->
+    <div class="page-header row no-gutters py-4">
+        <div class="col-12 col-sm-4 text-center text-sm-left mb-0">
+            <h3 class="page-title">Email
+                <a href="{% url 'email-add' %}"><button type="button" class="btn btn-sm btn-outline-primary">Add</button></a>
+            </h3>
+        </div>
+    </div>
+    <!-- End Page Header -->
+
+    <!-- Default Light Table -->
+    <div class="row">
+        <div class="col">
+            <div class="card card-small mb-4">
+                <div class="card-header border-bottom"></div>
+                <div class="card-body p-0 pb-3 text-center">
+                    <div class="table-responsive scrollbar">
+                        <table class="table mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th scope="col" class="border-0">#</th>
+                                    <th scope="col" class="border-0">Name</th>
+                                    <th scope="col" class="border-0">Email</th>
+                                    <th scope="col" class="border-0">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Item -->
+                                {% for email in object_list %}
+                                <tr>
+                                    <td><span class="font-weight-bold">{{ forloop.counter }}</span></td>
+                                    <td><span class="font-weight-normal">{{ email.name }}</span></td>
+                                    <td><span class="font-weight-normal">{{ email.email }}</span></td>
+                                    <td>
+                                        <a href="{% url 'email-delete' email.id %}"><button type="button" class="mb-2 btn btn-danger mr-2">Delete</button></a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Default Light Table -->
+
+    <!-- Page Header -->
+    <div class="page-header row no-gutters py-4">
+        <div class="col-12 col-sm-4 text-center text-sm-left mb-0">
+            <h3 class="page-title">Webhook
+                <a href="{% url 'webhook-add' %}"><button type="button" class="btn btn-sm btn-outline-primary">Add</button></a>
+            </h3>
+        </div>
+    </div>
+    <!-- End Page Header -->
+
+    <!-- Default Light Table -->
+    <div class="row">
+        <div class="col">
+            <div class="card card-small mb-4">
+                <div class="card-header border-bottom"></div>
+                <div class="card-body p-0 pb-3 text-center">
+                    <div class="table-responsive scrollbar">
+                        <table class="table mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th scope="col" class="border-0">#</th>
+                                    <th scope="col" class="border-0">Name</th>
+                                    <th scope="col" class="border-0">Webhook</th>
+                                    <th scope="col" class="border-0">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Item -->
+                                {% for webhook in webhook_list %}
+                                <tr>
+                                    <td><span class="font-weight-bold">{{ forloop.counter }}</span></td>
+                                    <td><span class="font-weight-normal">{{ webhook.name }}</span></td>
+                                    <td><span class="font-weight-normal">{{ webhook.webhook }}</span></td>
+                                    <td>
+                                        <a href="{% url 'webhook-delete' webhook.id %}"><button type="button" class="mb-2 btn btn-danger mr-2">Delete</button></a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Default Light Table -->
+</div>
+
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+    jQuery(document).ready(function ($) {
+        $(".clickable-row").click(function () {
+            window.location = $(this).data("href");
+        });
+    });
+</script>
+{% endblock javascripts %}
