@@ -67,7 +67,9 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "import_export",
     "django_rq",
+    "crispy_forms",
 ]
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -83,8 +85,9 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "monitor.urls"
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
 LOGIN_REDIRECT_URL = "home"
-LOGOUT_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "login"
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")  # ROOT dir for templates
 
 TEMPLATES = [
@@ -138,19 +141,10 @@ CACHES = {
     }
 }
 
-# RQ (Redis Queue)
-# http://python-rq.org/
+# Redis Queues
 
-# RQ_QUEUES = {
-#     "default": {"HOST": "redis", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 360}
-# }
-
-# RQ = {
-#     'host': 'redis',
-#     'db': 0,
-#     'DEFAULT_RESULT_TTL': 5000,
-# }
-
+# Change localhost for redis (production)
+# And viceversa (development)
 RQ_QUEUES = {
     "default": {
         "HOST": "localhost",
@@ -175,7 +169,7 @@ RQ_QUEUES = {
 RQ = {
     "host": "localhost",
     "db": 0,
-    "DEFAULT_RESULT_TTL": 60 * 60 * 24 * 7,
+    "DEFAULT_RESULT_TTL": 60 * 60 * 24 * 7,  # 1 week
 }
 
 # Password validation
