@@ -4,27 +4,6 @@ from web.models import AlertEmail, AlertWebhook, CustomUser, Agent, AgentConfig
 from django.contrib.auth.forms import UserCreationForm
 
 
-class LoginForm(forms.Form):
-    username = forms.CharField(
-        widget=forms.TextInput(
-            attrs={
-                "placeholder": "Username",
-                "class": "form-control",
-                "value": "",
-            }
-        )
-    )
-    password = forms.CharField(
-        widget=forms.PasswordInput(
-            attrs={
-                "placeholder": "Password",
-                "class": "form-control",
-                "value": "",
-            }
-        )
-    )
-
-
 class SignUpForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -36,6 +15,17 @@ class SignUpForm(UserCreationForm):
     class Meta:
         model = CustomUser
         fields = ("username", "email", "password1", "password2")
+
+
+class CustomUserForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].widget.attrs.update({"class": "form-control"})
+        self.fields["email"].widget.attrs.update({"class": "form-control"})
+
+    class Meta:
+        model = CustomUser
+        fields = ("username", "email")
 
 
 class ExecuteForm(forms.Form):

@@ -1,82 +1,98 @@
-from django.urls import path
-from django.contrib.auth.views import LogoutView
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView
+from django.urls import path
+from django.urls import reverse_lazy
+
 from web.tasks import startup_scheduling
 from web import views
 
-# pyright: reportMissingModuleSource=false
-# pyright: reportMissingImports=false
-
 urlpatterns = [
-    path("", login_required(views.AlertListView.as_view()), name="home"),
-    path("accounts/login/", views.login_view, name="login"),
+    path("", views.AlertListView.as_view(), name="home"),
+    path("accounts/login/", LoginView.as_view(template_name="accounts/login.html"), name="login"),
     path("accounts/register/", views.register_user, name="register"),
     path("accounts/logout/", LogoutView.as_view(), name="logout"),
-    path("accounts/profile/", login_required(views.Profile.as_view()), name="profile"),
+    path("accounts/profile/", views.Profile.as_view(), name="profile"),
+    path("accounts/update_profile/<pk>", views.UpdateProfile.as_view(), name="update-profile"),
+    path("password-reset/", views.ResetPasswordView.as_view(), name="password-reset"),
+    path(
+        "password-reset-confirm/<uidb64>/<token>/",
+        views.PasswordResetConfirmView.as_view(),
+        name="password-reset-confirm",
+    ),
+    path("password-reset-complete/", views.PasswordResetCompleteView.as_view(), name="password-reset-complete"),
+    path(
+        "change-password/",
+        login_required(
+            PasswordChangeView.as_view(
+                template_name="accounts/change_password.html", success_url=reverse_lazy("profile")
+            )
+        ),
+        name="change-password",
+    ),
     path(
         "host/<pk>/alert/<pk1>/",
-        login_required(views.AlertDetailView.as_view()),
+        views.AlertDetailView.as_view(),
         name="alert-detail",
     ),
     path(
         "host/<pk>/alert/<pk1>/delete/",
-        login_required(views.AlertDeleteView.as_view()),
+        views.AlertDeleteView.as_view(),
         name="alert-delete",
     ),
-    path("host/", login_required(views.HostListView.as_view()), name="host-list"),
-    path("host/add/", login_required(views.HostCreateView.as_view()), name="host-add"),
-    path("host/<pk>/", login_required(views.HostDetailView.as_view()), name="host-detail"),
+    path("host/", views.HostListView.as_view(), name="host-list"),
+    path("host/add/", views.HostCreateView.as_view(), name="host-add"),
+    path("host/<pk>/", views.HostDetailView.as_view(), name="host-detail"),
     path(
         "host/<pk>/delete/",
-        login_required(views.HostDeleteView.as_view()),
+        views.HostDeleteView.as_view(),
         name="host-delete",
     ),
     path(
         "host/<pk>/edit/",
-        login_required(views.HostUpdateView.as_view()),
+        views.HostUpdateView.as_view(),
         name="host-edit",
     ),
     path(
         "host/<pk>/execute/",
-        login_required(views.HostExecuteFormView.as_view()),
+        views.HostExecuteFormView.as_view(),
         name="host-execute",
     ),
     path(
         "host/<pk>/config/edit/",
-        login_required(views.HostConfigUpdateView.as_view()),
+        views.HostConfigUpdateView.as_view(),
         name="config-edit",
     ),
     path(
         "host/<pk>/config/",
-        login_required(views.config_detail),
+        views.config_detail,
         name="config-detail",
     ),
     path(
         "host/<pk>/metric/",
-        login_required(views.MetricListView.as_view()),
+        views.MetricListView.as_view(),
         name="metric-list",
     ),
     path(
         "host/<pk>/metric/<pk1>/",
-        login_required(views.MetricDetailView.as_view()),
+        views.MetricDetailView.as_view(),
         name="metric-detail",
     ),
     path(
         "host/<pk>/metric/<pk1>/delete/",
-        login_required(views.MetricDeleteView.as_view()),
+        views.MetricDeleteView.as_view(),
         name="metric-delete",
     ),
-    path("notification/", login_required(views.NotificationListView.as_view()), name="notification-list"),
-    path("email/add/", login_required(views.EmailCreateView.as_view()), name="email-add"),
+    path("notification/", views.NotificationListView.as_view(), name="notification-list"),
+    path("email/add/", views.EmailCreateView.as_view(), name="email-add"),
     path(
         "email/<pk>/delete/",
-        login_required(views.EmailDeleteView.as_view()),
+        views.EmailDeleteView.as_view(),
         name="email-delete",
     ),
-    path("webhook/add/", login_required(views.WebhookCreateView.as_view()), name="webhook-add"),
+    path("webhook/add/", views.WebhookCreateView.as_view(), name="webhook-add"),
     path(
         "webhook/<pk>/delete/",
-        login_required(views.WebhookDeleteView.as_view()),
+        views.WebhookDeleteView.as_view(),
         name="webhook-delete",
     ),
 ]

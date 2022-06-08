@@ -2,15 +2,19 @@ from datetime import datetime, timedelta
 from django import template
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView, PasswordResetCompleteView, PasswordChangeView
+from django.contrib.messages.views import SuccessMessageMixin
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Count
 from django.db.models.functions import TruncMinute
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, get_object_or_404
 from django.template import loader
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView, TemplateView
 from django.views.generic.edit import DeleteView, UpdateView, CreateView, FormView
 from rest_framework.authtoken.models import Token
@@ -19,15 +23,22 @@ from web.utils import format_bytes
 import contextlib
 import json
 
-# pyright: reportMissingModuleSource=false
-# pyright: reportMissingImports=false
 
 from web.models import Agent, AgentConfig, AlertEmail, AlertWebhook, Metric, Alert, CustomUser
-from web.forms import AgentConfigForm, AlertEmailForm, AlertWebhookForm, ExecuteForm, LoginForm, SignUpForm, AgentForm
+from web.forms import (
+    AgentConfigForm,
+    AlertEmailForm,
+    AlertWebhookForm,
+    CustomUserForm,
+    ExecuteForm,
+    SignUpForm,
+    AgentForm,
+)
 
 # Create your views here.
 
 
+@login_required
 def pages(request):
     context = {}
     # All resource paths end in .html.
@@ -44,24 +55,6 @@ def pages(request):
     except Exception:
         html_template = loader.get_template("error-500.html")
         return HttpResponse(html_template.render(context, request))
-
-
-def login_view(request):
-    form = LoginForm(request.POST or None)
-
-    if request.method == "POST":
-        if form.is_valid():
-            username = form.cleaned_data.get("username")
-            password = form.cleaned_data.get("password")
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                login(request, user)
-                return redirect("/")
-            else:
-                messages.error(request=request, message="Invalid credentials")
-        else:
-            messages.error(request=request, message="Error validating the form")
-    return render(request, "accounts/login.html", {"form": form})
 
 
 def register_user(request):
@@ -86,7 +79,8 @@ def register_user(request):
                     "address": "Salamanca, Spain",
                     "url": "https://nonuser.es",
                     "header": f"Welcome to Monitor {username}",
-                    "message": "Congratulations on setting up your account! You now have access to all account features!",
+                    "message": "Congratulations on setting up your account!"
+                    "You now have access to all account features!",
                 },
             )
             send_email_task(
@@ -107,6 +101,32 @@ def register_user(request):
     )
 
 
+class ResetPasswordView(SuccessMessageMixin, PasswordResetView):
+    template_name = "accounts/password_reset.html"
+    email_template_name = "accounts/password_reset_email.html"
+    subject_template_name = "accounts/password_reset_subject.txt"
+    success_message = (
+        "We've emailed you instructions for setting your password, "
+        "if an account exists with the email you entered. You should receive them shortly."
+        " If you don't receive an email, "
+        "please make sure you've entered the address you registered with, and check your spam folder."
+    )
+    success_url = reverse_lazy("login")
+
+
+class PasswordResetConfirmView(SuccessMessageMixin, PasswordResetConfirmView):
+    template_name = "accounts/password_reset_confirm.html"
+    success_message = "Your password has been reset. You can now log in."
+    success_url = reverse_lazy("login")
+
+
+class PasswordResetCompleteView(SuccessMessageMixin, PasswordResetCompleteView):
+    template_name = "accounts/password_reset_complete.html"
+    success_message = "Your password has been reset. You can now log in."
+    success_url = reverse_lazy("login")
+
+
+@method_decorator(login_required, name="dispatch")
 class Profile(TemplateView):
     model = CustomUser
     template_name = "accounts/profile.html"
@@ -115,6 +135,14 @@ class Profile(TemplateView):
         context = super().get_context_data()
         context["token"] = Token.objects.get(user=self.request.user).key
         return context
+
+
+@method_decorator(login_required, name="dispatch")
+class UpdateProfile(UpdateView):
+    model = CustomUser
+    form_class = CustomUserForm
+    template_name = "common/edit.html"
+    success_url = reverse_lazy("profile")
 
 
 def handler403(request, exception, template_name="errors/403.html"):
@@ -132,6 +160,7 @@ def handler500(request, template_name="errors/500.html"):
 ######################################################################################################################
 
 
+@method_decorator(login_required, name="dispatch")
 class HostCreateView(CreateView):
     model = Agent
     form_class = AgentForm
@@ -143,6 +172,7 @@ class HostCreateView(CreateView):
         return super().form_valid(form)
 
 
+@method_decorator(login_required, name="dispatch")
 class HostUpdateView(UpdateView):
     model = Agent
     form_class = AgentForm
@@ -153,6 +183,7 @@ class HostUpdateView(UpdateView):
         return Agent.objects.filter(token=self.kwargs["pk"], user=self.request.user)
 
 
+@method_decorator(login_required, name="dispatch")
 class HostDeleteView(DeleteView):
     model = Agent
     success_url = reverse_lazy("host-list")
@@ -162,6 +193,7 @@ class HostDeleteView(DeleteView):
         return Agent.objects.filter(token=self.kwargs["pk"], user=self.request.user)
 
 
+@method_decorator(login_required, name="dispatch")
 class HostListView(ListView):
     model = Agent
     paginate_by = 7
@@ -171,6 +203,7 @@ class HostListView(ListView):
         return super().get_queryset().filter(user=self.request.user)
 
 
+@method_decorator(login_required, name="dispatch")
 class HostDetailView(DetailView):
     model = Agent
     template_name = "host/detail.html"
@@ -309,6 +342,7 @@ class HostDetailView(DetailView):
 ######################################################################################################################
 
 
+@method_decorator(login_required, name="dispatch")
 class HostExecuteFormView(FormView):
     form_class = ExecuteForm
     template_name = "host/execute.html"
@@ -337,6 +371,7 @@ class HostExecuteFormView(FormView):
 ######################################################################################################################
 
 
+@method_decorator(login_required, name="dispatch")
 class HostConfigUpdateView(UpdateView):
     model = AgentConfig
     form_class = AgentConfigForm
@@ -357,6 +392,7 @@ class HostConfigUpdateView(UpdateView):
         return HttpResponseRedirect(url)
 
 
+@login_required
 def config_detail(request, pk):
     HTML_FILE = "config/detail.html"
     host = get_object_or_404(Agent, token=pk, user=request.user)
@@ -423,6 +459,7 @@ def config_detail(request, pk):
 ######################################################################################################################
 
 
+@method_decorator(login_required, name="dispatch")
 class MetricListView(ListView):
     model = Metric
     paginate_by = 7
@@ -464,6 +501,7 @@ class MetricListView(ListView):
         return context
 
 
+@method_decorator(login_required, name="dispatch")
 class MetricDetailView(DetailView):
     model = Metric
     template_name = "metric/detail.html"
@@ -483,6 +521,7 @@ class MetricDetailView(DetailView):
         return context
 
 
+@method_decorator(login_required, name="dispatch")
 class MetricDeleteView(DeleteView):
     model = Metric
     success_url = reverse_lazy("host-detail")
@@ -502,6 +541,7 @@ class MetricDeleteView(DeleteView):
 ######################################################################################################################
 
 
+@method_decorator(login_required, name="dispatch")
 class AlertListView(ListView):
     model = Alert
     paginate_by = 7
@@ -580,6 +620,7 @@ class AlertListView(ListView):
         return date_from, date_to
 
 
+@method_decorator(login_required, name="dispatch")
 class AlertDetailView(DetailView):
     model = Alert
     template_name = "alert/detail.html"
@@ -600,6 +641,7 @@ class AlertDetailView(DetailView):
         return context
 
 
+@method_decorator(login_required, name="dispatch")
 class AlertDeleteView(DeleteView):
     model = Alert
     success_url = reverse_lazy("home")
@@ -612,6 +654,7 @@ class AlertDeleteView(DeleteView):
 ######################################################################################################################
 
 
+@method_decorator(login_required, name="dispatch")
 class NotificationListView(ListView):
     model = AlertEmail
     template_name = "notification/list.html"
@@ -625,6 +668,7 @@ class NotificationListView(ListView):
         return context
 
 
+@method_decorator(login_required, name="dispatch")
 class EmailCreateView(CreateView):
     model = AlertEmail
     form_class = AlertEmailForm
@@ -636,12 +680,14 @@ class EmailCreateView(CreateView):
         return super().form_valid(form)
 
 
+@method_decorator(login_required, name="dispatch")
 class EmailDeleteView(DeleteView):
     model = AlertEmail
     success_url = reverse_lazy("notification-list")
     template_name = "common/delete.html"
 
 
+@method_decorator(login_required, name="dispatch")
 class WebhookCreateView(CreateView):
     model = AlertWebhook
     form_class = AlertWebhookForm
@@ -653,6 +699,7 @@ class WebhookCreateView(CreateView):
         return super().form_valid(form)
 
 
+@method_decorator(login_required, name="dispatch")
 class WebhookDeleteView(DeleteView):
     model = AlertWebhook
     success_url = reverse_lazy("notification-list")
