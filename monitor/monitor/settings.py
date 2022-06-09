@@ -61,12 +61,13 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "rest_api",
-    "web",
     "rest_framework",
     "rest_framework.authtoken",
     "import_export",
     "django_rq",
+    "rest_api",
+    "web",
+    "django_minify_html",
     "crispy_forms",
 ]
 
@@ -82,6 +83,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django_minify_html.middleware.MinifyHtmlMiddleware",
 ]
 
 ROOT_URLCONF = "monitor.urls"

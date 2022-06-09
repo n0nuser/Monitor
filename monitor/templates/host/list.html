@@ -25,6 +25,8 @@
     </div>
     <!-- End Page Header -->
 
+    {% include 'includes/dropdown_pagination.html' %}
+
     <!-- Default Light Table -->
     <div class="row">
         <div class="col">
@@ -77,25 +79,8 @@
     </div>
     <!-- End Default Light Table -->
 
-    <!-- Pagination -->
-    <div class="row">
-        <div class="col">
-            <a href="?page=1"><button type="button" class="mb-2 btn btn-sm btn-outline-primary mr-1">&laquo;
-                    first</button></a>
-            {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}"><button type="button"
-                    class="mb-2 btn btn-sm btn-outline-primary mr-1">previous</button></a>
-            {% endif %}
-            <button class="mb-2 btn btn-sm text-primary mr-1">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</button>
-            {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}"><button type="button"
-                    class="mb-2 btn btn-sm btn-outline-primary mr-1">next</button></a>
-            {% endif %}
-            <a href="?page={{ page_obj.paginator.num_pages }}"><button type="button"
-                    class="mb-2 btn btn-sm btn-outline-primary mr-1">last</button></a>
-        </div>
-    </div>
-    <!-- End Pagination -->
+    {% include 'includes/pagination.html' %}
+
 </div>
 
 
