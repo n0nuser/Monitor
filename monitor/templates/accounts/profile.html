@@ -15,8 +15,8 @@
       <span class="text-uppercase page-subtitle">Overview</span>
       <div class="row">
         <h3 class="page-title ml-3">User Profile</h3>
-        <a href="{% url 'update-profile' request.user.id %}"><button type="button" class="btn btn-primary ml-3">Update profile</button></a>
-        <a href="{% url 'change-password' %}"><button type="button" class="btn btn-primary ml-3">Change password</button></a>
+        <!-- <a href="{% url 'update-profile' request.user.id %}"><button type="button" class="btn btn-primary ml-3">Update profile</button></a>
+        <a href="{% url 'change-password' %}"><button type="button" class="btn btn-primary ml-3">Change password</button></a> -->
       </div>
     </div>
   </div>
@@ -49,23 +49,28 @@
                 <div class="form-row ml-2">
                   <div class="form-group col-md-6">
                     <label for="feEmailAddress">Email</label>
-                    <input class="form-control-plaintext" id="feEmailAddress" placeholder="Email"
-                      value="{{ request.user.email }}" readonly>
+                    <input class="form-control" id="feEmailAddress" placeholder="Email" value="{{ request.user.email }}"
+                      readonly>
                   </div>
                   <div class="form-group col-md-6">
                     <label for="feUsername">Username</label>
-                    <input class="form-control-plaintext" id="feUsername" placeholder="Username"
+                    <input class="form-control" id="feUsername" placeholder="Username"
                       value="{{ request.user.username }}" readonly>
                   </div>
                   <div class="form-group col-md-6">
                     <label for="feUsername">Account ID</label>
-                    <input class="form-control-plaintext" id="feUsername" placeholder="Account ID"
-                      value="{{ request.user.id }}" readonly>
+                    <input class="form-control" id="feUsername" placeholder="Account ID" value="{{ request.user.id }}"
+                      readonly>
                   </div>
-                  <div class="form-group">
+                  <div class="form-group col-md-6">
                     <label for="feToken">Token</label>
-                    <input type="text" class="form-control-plaintext" id="feToken" placeholder="Token"
-                      value="{{ token }}" readonly>
+                    <input class="form-control" id="feToken" placeholder="Token" value="{{ token }}" readonly>
+                  </div>
+                  <div class="form-group col-md-6">
+                    <a href="{% url 'update-profile' request.user.id %}"><button type="button"
+                        class="btn btn-primary">Update profile</button></a>
+                        <a href="{% url 'change-password' %}"><button type="button" class="btn btn-primary">Change
+                            password</button></a>
                   </div>
                 </div>
               </div>

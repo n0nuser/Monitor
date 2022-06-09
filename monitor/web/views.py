@@ -196,8 +196,11 @@ class HostDeleteView(DeleteView):
 @method_decorator(login_required, name="dispatch")
 class HostListView(ListView):
     model = Agent
-    paginate_by = 7
+    paginate_by = 5
     template_name = "host/list.html"
+
+    def get_paginate_by(self, queryset):
+        return self.kwargs.get("show") or self.request.GET.get("show") or self.paginate_by
 
     def get_queryset(self):
         return super().get_queryset().filter(user=self.request.user)
@@ -462,8 +465,11 @@ def config_detail(request, pk):
 @method_decorator(login_required, name="dispatch")
 class MetricListView(ListView):
     model = Metric
-    paginate_by = 7
+    paginate_by = 5
     template_name = "metric/list.html"
+
+    def get_paginate_by(self, queryset):
+        return self.kwargs.get("show") or self.request.GET.get("show") or self.paginate_by
 
     def get_queryset(self):
         host = get_object_or_404(Agent, token=self.kwargs["pk"], user=self.request.user)
@@ -544,8 +550,11 @@ class MetricDeleteView(DeleteView):
 @method_decorator(login_required, name="dispatch")
 class AlertListView(ListView):
     model = Alert
-    paginate_by = 7
+    paginate_by = 5
     template_name = "alert/list.html"
+
+    def get_paginate_by(self, queryset):
+        return self.kwargs.get("show") or self.request.GET.get("show") or self.paginate_by
 
     def get_queryset(self):
         startDate = self.request.GET.get("start")
