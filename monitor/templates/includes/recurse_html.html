@@ -1,0 +1,21 @@
+<!-- Adaptation of https://stackoverflow.com/a/35532788 -->
+{% load custom_tags %}
+<ol class="list-group list-group-numbered mb-2">
+    {% for key,value in dict.items %}
+    <li class="list-group-item d-flex justify-content-between align-items-start">
+        <div class="ms-2 me-auto">
+            {% if value.items %}
+            <div class="font-weight-bold">{{ key|field_name_to_label }}</div>
+            <div class="ms-2 me-auto ml-4">
+                {% include "includes/recurse.html" with dict=value %}
+            </div>
+            {% else %}
+            <div class="row">
+                <div class="col-xs-6 font-weight-bold">{{ key|field_name_to_label }}:</div>
+                <div class="col-xs-6 ml-2">{{ value|safe }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </li>
+    {% endfor %}
+</ol>

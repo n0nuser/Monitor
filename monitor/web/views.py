@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView, PasswordResetCompleteView, PasswordChangeView
+from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView, PasswordResetCompleteView
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Count
@@ -364,8 +364,7 @@ class HostExecuteFormView(FormView):
         # It should return an HttpResponse.
         host = get_object_or_404(Agent, pk=self.kwargs["pk"], user=self.request.user)
         response = form.execute_command(host.ip, host.port)
-        response = json.dumps(response, cls=DjangoJSONEncoder)
-        # url = reverse_lazy("host-execute", kwargs={"pk": self.kwargs["pk"]}) + "#response"
+        # response = json.dumps(response, cls=DjangoJSONEncoder)
         url = f"{self.request.path}#response"
         messages.success(request=self.request, message=response)
         return HttpResponseRedirect(url)

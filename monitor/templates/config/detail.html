@@ -11,16 +11,17 @@
   <div class="page-header row no-gutters py-4">
     <div class="col-12 col-sm-4 text-center text-sm-left mb-0">
       <span class="text-uppercase page-subtitle">Host</span>
-      <h3 class="page-title">{{ host.name }}'s config
-        <a href="{% url 'config-edit' host.token %}"><button type="button" class="btn btn-sm btn-outline-primary">Edit
+      <div class="row">
+        <h3 class="page-title">{{ host.name }}'s config</h3>
+        <a href="{% url 'config-edit' host.token %}"><button type="button"
+            class="ml-2 col-xs-6 btn btn-sm btn-outline-primary">Edit
             Config</button></a>
-        <button type="button" class="btn btn-sm btn-outline-primary copy-btn" onclick="copyText()">Copy to
+        <button type="button" class="ml-2 col-xs-6 btn btn-sm btn-outline-primary copy-btn" onclick="copyText()">Copy to
           clipboard</button>
-      </h3>
+      </div>
     </div>
     <div class="col-sm-8 text-center text-sm-right mb-0">
       <div class="btn-group">
-        <button type="button" class="btn btn-sm btn-outline-primary">Share</button>
         <button type="button" class="btn btn-sm btn-outline-primary">Export</button>
       </div>
     </div>
@@ -52,38 +53,40 @@
   function copyToClipboard(textToCopy) {
     // navigator clipboard api needs a secure context (https)
     if (navigator.clipboard && window.isSecureContext) {
-        // navigator clipboard api method'
-        return navigator.clipboard.writeText(textToCopy);
+      // navigator clipboard api method'
+      return navigator.clipboard.writeText(textToCopy);
     } else {
-        // text area method
-        let textArea = document.createElement("textarea");
-        textArea.value = textToCopy;
-        // make the textarea out of viewport
-        textArea.style.position = "fixed";
-        textArea.style.left = "-999999px";
-        textArea.style.top = "-999999px";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        return new Promise((res, rej) => {
-            // here the magic happens
-            document.execCommand('copy') ? res() : rej();
-            textArea.remove();
-        });
+      // text area method
+      let textArea = document.createElement("textarea");
+      textArea.value = textToCopy;
+      // make the textarea out of viewport
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      return new Promise((res, rej) => {
+        // here the magic happens
+        document.execCommand('copy') ? res() : rej();
+        textArea.remove();
+      });
     }
-}
+  }
 
   function copyText() {
     /* Get the text field */
     const data = "{{ data|escapejs }}"
     copyToClipboard(data)
-    .then(() => alert("Copied to clipboard!"))
-    .catch(() => alert("Oops, unable to copy!"));
+      .then(() => alert("Copied to clipboard!"))
+      .catch(() => alert("Oops, unable to copy!"));
   }
 </script>
 
 <script>
   var jjson = '{{ data|escapejs }}';
-  $("#jjson").jJsonViewer(jjson, { expanded: true });
+  $("#jjson").jJsonViewer(jjson, {
+    expanded: true
+  });
 </script>
 {% endblock javascripts %}
