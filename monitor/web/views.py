@@ -359,15 +359,17 @@ class HostExecuteFormView(FormView):
         context["host"] = get_object_or_404(Agent, pk=self.kwargs["pk"], user=self.request.user)
         return context
 
-    def form_valid(self, form):
+    def form_valid(self, form, **kwargs):
         # This method is called when valid form data has been POSTed.
         # It should return an HttpResponse.
         host = get_object_or_404(Agent, pk=self.kwargs["pk"], user=self.request.user)
         response = form.execute_command(host.ip, host.port)
         # response = json.dumps(response, cls=DjangoJSONEncoder)
-        url = f"{self.request.path}#response"
-        messages.success(request=self.request, message=response)
-        return HttpResponseRedirect(url)
+        # url = f"{self.request.path}#response"
+        context = super().get_context_data(**kwargs)
+        context["command"] = response
+        context["host"] = host
+        return self.render_to_response(context)
 
 
 ######################################################################################################################

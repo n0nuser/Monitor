@@ -27,8 +27,9 @@
                 <span>Command for {{ host.name }} will be sent to http://{{ host.ip }}:{{ host.port }}.<br>If this is
                   incorrect, edit the agent <a href="{% url 'host-edit' host.token %}">here</a>.</span>
                 <form role="form" method="post" class="pt-3">
+                  {% load crispy_forms_tags %}
                   {% csrf_token %}
-                  {{ form.as_p }}
+                  {{ form|crispy }}
                   <button type="submit" name="add" class="btn btn-accent">Execute Command</button>
                 </form>
               </div>
@@ -40,23 +41,11 @@
   </div>
   <!-- End Default Light Table -->
 
-  {% if messages %}
-  <div class="row">
-    <div class="col">
-      <div class="card card-small mb-4">
-        <div class="card-header border-bottom">
-          <h6 id="response" class="m-0">Response</h6>
-        </div>
-        <div class="card-body p-0 pb-3" style="background: #f8f8f8">
-          <div id="response-data"></div>
-          {% for message in messages %}
-            {% comment %} {% debug %} {% endcomment %}
-            {% load custom_tags %}
-            {% include 'includes/recurse_html.html' with dict=message.message|todict %}
-          {% endfor %}
-        </div>
-      </div>
-    </div>
+  {% if command %}
+  <h6 id="response" class="m-0">Response</h6>
+  <div class="card-body p-0 pb-3" style="background: #f8f8f8">
+    <div id="response-data"></div>
+    {% include 'includes/recurse_html.html' with dict=command %}
   </div>
   {% endif %}
 </div>

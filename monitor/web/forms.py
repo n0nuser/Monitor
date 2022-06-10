@@ -30,14 +30,23 @@ class CustomUserForm(forms.ModelForm):
 
 class ExecuteForm(forms.Form):
     command = forms.CharField(widget=forms.Textarea)
-    timeout_for_request = forms.IntegerField(min_value=1)
-    timeout_for_command = forms.IntegerField(min_value=1)
+    timeout_for_request = forms.IntegerField(min_value=1, initial=15)
+    timeout_for_command = forms.IntegerField(min_value=1, initial=10)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["command"].widget.attrs.update({"class": "form-control"})
         self.fields["timeout_for_request"].widget.attrs.update({"class": "form-control"})
         self.fields["timeout_for_command"].widget.attrs.update({"class": "form-control"})
+
+    def clean(self):
+        cleaned_data = super().clean()
+        requestTimeout = cleaned_data['timeout_for_request']
+        commandTimeout = cleaned_data['timeout_for_command']
+        if requestTimeout <= commandTimeout:
+            raise forms.ValidationError('The timeout for request must be greater than the timeout for \
+                the command in order for the request to succeed.')
+        return cleaned_data
 
     def execute_command(self, host, port):
         command = self.cleaned_data["command"]
