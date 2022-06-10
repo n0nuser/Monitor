@@ -17,89 +17,20 @@
   </div>
   <!-- End Page Header -->
 
-  <div class="page-header row no-gutters py-4">
-    <div class="col-12 col-sm-4 text-center text-sm-left mb-0">
-      <h3 class="page-title">Metrics</h3>
-    </div>
-    <div class="col-sm-8 text-center text-sm-right mb-0">
-      <div class="btn-group">
-        <button type="button" id="exportData" class="btn btn-sm btn-outline-primary">Export</button>
-      </div>
-    </div>
+  <div class="card main-content-container container-fluid px-4">
+    <div class="page-header row no-gutters py-2"></div>
+    {% if status %}
+    <h4>Status</h4>
+    {% include 'includes/recurse.html' with dict=status %}
+    {% endif %}
+    
+    {% if metrics %}
+    <h4>Metrics</h4>
+    {% include 'includes/recurse.html' with dict=metrics %}
+    {% endif %}
   </div>
-
-  <!-- Status -->
-  <div class="row">
-    <div class="col">
-      <div class="card card-small mb-4">
-        <div class="card-header border-bottom">
-          <h6 class="m-0">Status</h6>
-        </div>
-        <div class="card-body p-0 pb-3" style="background: #f8f8f8">
-          <div id="status" class="jjson"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- End Status -->
-
-  <!-- Metrics -->
-  <div class="row">
-    <div class="col">
-      <div class="card card-small mb-4">
-        <div class="card-header border-bottom">
-          <h6 class="m-0">Metrics</h6>
-        </div>
-        <div class="card-body p-0 pb-3" style="background: #f8f8f8">
-          <div id="metrics" class="jjson"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- End Metrics -->
 </div>
 {% endblock content %}
 
 <!-- Specific Page JS goes HERE  -->
-{% block javascripts %}
-<script>
-  var statusjs = '{{ status|escapejs }}';
-  $("#status").jJsonViewer(statusjs, { expanded: true });
-  var metricsjs = '{{ metrics|escapejs }}';
-  $("#metrics").jJsonViewer(metricsjs, { expanded: true });
-</script>
-
-<script>
-  $("#exportData").click(function () {
-    // create `a` element
-    const statusData = {{ status| safe }};
-    var timestamp = statusData.status.timestamp;
-    timestamp = timestamp + "Z";
-    var date = new Date(timestamp);
-    var dformat =
-      ("00" + date.getDate()).slice(-2) + "-" +
-      ("00" + (date.getMonth() + 1)).slice(-2) + "-" +
-      date.getFullYear() + "T" +
-      ("00" + date.getHours()).slice(-2) + "-" +
-      ("00" + date.getMinutes()).slice(-2) + "-" +
-      ("00" + date.getSeconds()).slice(-2);
-    $("<a />", {
-      // if supported , set name of file
-      download: dformat + ".json",
-      // set `href` to `objectURL` of `Blob` of `textarea` value
-      href: URL.createObjectURL(
-        new Blob(['{{ metrics|escapejs }}'], {
-          type: "text/plain"
-        }))
-    })
-      // append `a` element to `body`
-      // call `click` on `DOM` element `a`
-      .appendTo("body")[0].click();
-    // remove appended `a` element after "Save File" dialog,
-    // `window` regains `focus` 
-    $(window).one("focus", function () {
-      $("a").last().remove()
-    })
-  });
-</script>
-{% endblock javascripts %}
+{% block javascripts %}{% endblock javascripts %}

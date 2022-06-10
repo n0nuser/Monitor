@@ -522,8 +522,8 @@ class MetricDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["status"] = json.dumps(self.object.status, indent=4, sort_keys=True)
-        context["metrics"] = json.dumps(self.object.metrics, indent=4, sort_keys=True)
+        context["status"] = self.object.status
+        context["metrics"] = self.object.metrics
         return context
 
 
