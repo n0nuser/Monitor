@@ -40,7 +40,6 @@ class ExecuteForm(forms.Form):
         self.fields["timeout_for_command"].widget.attrs.update({"class": "form-control"})
 
     def execute_command(self, host, port):
-        # send email using the self.cleaned_data dictionary
         command = self.cleaned_data["command"]
         timeout_for_request = self.cleaned_data["timeout_for_request"]
         timeout_for_command = self.cleaned_data["timeout_for_command"]
@@ -51,14 +50,14 @@ class ExecuteForm(forms.Form):
             return response.json()
         except requests.exceptions.ReadTimeout:
             response = {
-                "status": "error",
-                "stderr": "Request timeout. Please try to increase 'Timeout for request'.",
+                "status": "Error",
+                "stderr": "Request timeout. Please try to increase Timeout for request.",
             }
             return response
         except requests.exceptions.ConnectionError:
             response = {
-                "status": "error",
-                "stderr": f"Connection error. Could not connect to the agent: #Check if agent is running succesfully. #Check IP ({host}) and Port ({port}) configuration. #Check port forwarding in agent's router if the agent is outside your network.",
+                "status": "Error",
+                "stderr": f"Connection error. Could not connect to the agent:<br>· Check if the agent is running succesfully.<br>· Check IP ({host}) and Port ({port}) configuration.<br>· Check port forwarding in the router in case the agent is outside your network.",
             }
             return response
 

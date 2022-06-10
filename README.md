@@ -1,6 +1,6 @@
 # Monitor
 
-A RESTful webpage that allows to manage agents and get results from them. Django is used for the webpage, while Django REST Framework is used for the REST API.
+A web app that allows to manage agents and get results from them. Django is used for the webpage, while Django REST Framework is used for the REST API.
 
 The webpage will be used by the user to manage its server/computers remotely and get their metrics, as well as send them commands in POST requests to the agents.
 

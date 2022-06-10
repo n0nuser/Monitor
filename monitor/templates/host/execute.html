@@ -40,73 +40,28 @@
   </div>
   <!-- End Default Light Table -->
 
-  <div class="bg-secondary text-white rounded p-3 mb-3" style="box-shadow: inset 0 0 5px rgba(0,0,0,.2);">
-    'stdout' and 'stderr' do not have break lines due to Agent sending JSON instead of HTML.
-  </div>
-
+  {% if messages %}
   <div class="row">
     <div class="col">
       <div class="card card-small mb-4">
         <div class="card-header border-bottom">
-          <h6 id="response" class="m-0">Response
-            <button type="button" id="exportData" class="ml-2 btn btn-sm btn-outline-primary">Export</button>
-          </h6>
+          <h6 id="response" class="m-0">Response</h6>
         </div>
         <div class="card-body p-0 pb-3" style="background: #f8f8f8">
-          <div id="response-data" class="jjson"></div>
+          <div id="response-data"></div>
+          {% for message in messages %}
+            {% comment %} {% debug %} {% endcomment %}
+            {% load custom_tags %}
+            {% include 'includes/recurse_html.html' with dict=message.message|todict %}
+          {% endfor %}
         </div>
       </div>
     </div>
   </div>
+  {% endif %}
 </div>
 
 {% endblock content %}
 
 <!-- Specific Page JS goes HERE  -->
-{% block javascripts %}
-<script>
-  $(function () {
-    {% if messages %}
-    {% for message in messages %}
-    var response = "{{ message|escapejs }}";
-    $("#response-data").jJsonViewer(response, { expanded: true });
-    {% endfor %}
-    {% endif %}
-  });
-
-  $("#exportData").click(function () {
-    // create `a` element
-    var date = new Date();
-    var dformat =
-      ("00" + date.getDate()).slice(-2) + "-" +
-      ("00" + (date.getMonth() + 1)).slice(-2) + "-" +
-      date.getFullYear() + "T" +
-      ("00" + date.getHours()).slice(-2) + "-" +
-      ("00" + date.getMinutes()).slice(-2) + "-" +
-      ("00" + date.getSeconds()).slice(-2);
-    
-    const hostname = "{{ host.name|escapejs }}";
-    {% if messages %} 
-    {% for message in messages %}
-    $("<a />", {
-      // if supported , set name of file
-      download: hostname + "_command_" + dformat + ".json",
-      // set `href` to `objectURL` of `Blob` of `textarea` value
-      href: URL.createObjectURL(
-        new Blob(['{{ message|escapejs }}'], {
-          type: "text/plain"
-        }))
-    })
-    {% endfor %}
-    {% endif %}
-      // append `a` element to `body`
-      // call `click` on `DOM` element `a`
-      .appendTo("body")[0].click();
-    // remove appended `a` element after "Save File" dialog,
-    // `window` regains `focus` 
-    $(window).one("focus", function () {
-      $("a").last().remove()
-    })
-  });
-</script>
-{% endblock javascripts %}
+{% block javascripts %}{% endblock javascripts %}
