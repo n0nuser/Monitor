@@ -98,4 +98,4 @@ urlpatterns = [
 ]
 
 # https://www.pythonfixing.com/2022/01/fixed-execute-code-when-django-starts.html
-startup_scheduling()
+# startup_scheduling()

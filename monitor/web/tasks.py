@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.core.mail import send_mail, BadHeaderError
 from django.template import loader
 from django.utils import timezone as datetime
@@ -73,7 +72,7 @@ def verify_status(
 def check_status():
     agents = Agent.objects.all()
 
-    if agents.count() == 0:
+    if not agents:
         logger.info("No agents found")
         return None
 

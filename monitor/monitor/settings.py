@@ -15,18 +15,15 @@ import environ
 from unipath import Path
 from django.core.exceptions import ImproperlyConfigured
 
-env = environ.Env(
-    # set casting, default value
-    DEBUG=(bool, False)
-)
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # Set the project base directory
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 # Take environment variables from .env file
+env = environ.FileAwareEnv()
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 PROJECT_DIR = Path(__file__).parent
 
@@ -63,10 +60,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework.authtoken",
+    "web",
     "import_export",
     "django_rq",
     "rest_api",
-    "web",
     "django_minify_html",
     "crispy_forms",
 ]
@@ -114,24 +111,24 @@ WSGI_APPLICATION = "monitor.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.postgresql",
-#         "HOST": "db",  # Taken from docker-compose.yml
-#         "PORT": 5432,
-#         "NAME": env("POSTGRES_NAME", default="postgres"),
-#         "USER": env("POSTGRES_USER", default="postgres"),
-#         "PASSWORD": env("POSTGRES_PASSWORD", default="postgres"),
-#     }
-# }
-
-# FOR DEBUGGING
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        "ENGINE": "django.db.backends.postgresql",
+        "HOST": "postgres",  # Taken from docker-compose.yml
+        "PORT": 5432,
+        "NAME": env("POSTGRES_NAME", default="postgres"),
+        "USER": env("POSTGRES_USER", default="postgres"),
+        "PASSWORD": env("POSTGRES_PASSWORD", default="postgres"),
     }
 }
+
+# FOR DEBUGGING
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+#     }
+# }
 
 # Cache
 # https://docs.djangoproject.com/en/4.0/topics/cache/
@@ -149,19 +146,19 @@ CACHES = {
 # And viceversa (development)
 RQ_QUEUES = {
     "default": {
-        "HOST": "localhost",
+        "HOST": "redis",
         "PORT": 6379,
         "DB": 0,
         "DEFAULT_TIMEOUT": 360,
     },
     "high": {
-        "HOST": "localhost",
+        "HOST": "redis",
         "PORT": 6379,
         "DB": 0,
         "DEFAULT_TIMEOUT": 360,
     },
     "low": {
-        "HOST": "localhost",
+        "HOST": "redis",
         "PORT": 6379,
         "DB": 0,
         "DEFAULT_TIMEOUT": 360,
@@ -169,7 +166,7 @@ RQ_QUEUES = {
 }
 
 RQ = {
-    "host": "localhost",
+    "host": "redis",
     "db": 0,
     "DEFAULT_RESULT_TTL": 60 * 60 * 24 * 7,  # 1 week
 }
@@ -260,8 +257,8 @@ LOGGING = {
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = str(env("EMAIL_HOST", default="smtp.gmail.com"))  # add your own settings here
 EMAIL_PORT = int(env("EMAIL_PORT", default=587))  # add your own settings here
-EMAIL_HOST_USER = str(env("EMAIL_HOST_USER"))  # add your own settings here
-EMAIL_HOST_PASSWORD = str(env("EMAIL_HOST_PASSWORD"))  # add your own settings here
+EMAIL_HOST_USER = str(env("EMAIL_HOST_USER", default="account@gmail.com"))  # add your own settings here
+EMAIL_HOST_PASSWORD = str(env("EMAIL_HOST_PASSWORD", default="password"))  # add your own settings here
 EMAIL_USE_TLS = True  # add your own settings here
 
 #############################################################

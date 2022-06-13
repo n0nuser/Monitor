@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "monitor"
 version = "0.1.0"
-description = "RESTful web that monitorizes and manages agents."
+description = "Web app that monitorizes and manages agents."
 authors = ["Pablo González Rubio <pjgr2000@gmail.com>"]
 repository = "https://github.com/n0nuser/monitor"
 license = "GPL-3.0-or-later"
