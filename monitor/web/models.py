@@ -29,10 +29,10 @@ class Agent(models.Model):
         ("UN", "UNREACHEABLE"),
     ]
 
-    def token():
+    def tokenfunc():
         return binascii.hexlify(os.urandom(20)).decode()
 
-    token = models.CharField(max_length=50, default=token, primary_key=True)
+    token = models.CharField(max_length=50, default=tokenfunc, primary_key=True)
     created = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(CustomUser, related_name="agents", on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
