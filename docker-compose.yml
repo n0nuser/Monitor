@@ -5,7 +5,7 @@ services:
     container_name: django-monitor-uvicorn
     volumes:
       - static_volume:/var/www/app/static
-    restart: on-failure
+    restart: always
     expose:
       - 8000
     env_file:
@@ -20,7 +20,7 @@ services:
   postgres:
     image: postgres
     container_name: django-monitor-postgres
-    restart: on-failure
+    restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     ports:
@@ -32,13 +32,13 @@ services:
   
   redis:
     image: redis
-    restart: on-failure
+    restart: always
     container_name: django-monitor-redis
   
   nginx:
     build: ./nginx
     container_name: django-monitor-nginx
-    restart: on-failure
+    restart: always
     volumes:
       - static_volume:/var/www/app/static
     ports:

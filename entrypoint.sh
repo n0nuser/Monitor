@@ -8,6 +8,9 @@ python manage.py migrate web
 echo "Apply database migrations"
 python manage.py migrate
 
+echo "Create superuser with .env parameters"
+python manage.py createsuperuser --no-input
+
 echo "Run Redis Queue Workers"
 python manage.py rqworker high default low &
 
