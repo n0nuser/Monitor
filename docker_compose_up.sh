@@ -1,11 +1,7 @@
-# docker-compose up --build
-docker-compose up -d --build
-docker exec django-monitor-uvicorn python3 manage.py collectstatic --no-input
-# docker exec django-monitor-uvicorn python3 manage.py compress
-# docker exec django-monitor-uvicorn python3 manage.py createcachetable
-docker exec django-monitor-uvicorn python3 manage.py migrate --noinput
+echo "Updating requirements.txt with pyproject.toml"
+poetry export -f requirements.txt --output requirements.txt --without-hashes
 
-USER=admin
-PASS=admin
-EMAIL=admin@monitor.tfg
-echo "from web.models import CustomUser; User.objects.create_superuser('$USER', '$EMAIL', '$PASS')" | docker exec django-monitor-uvicorn python3 manage.py shell
+echo "Docker-Compose Build"
+docker-compose build
+echo "Docker-Compose Deploy"
+docker-compose up -d

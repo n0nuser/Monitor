@@ -1,49 +1,53 @@
 version: '3'
 services:
   monitor:
-    build: ./monitor
+    build: .
     container_name: django-monitor-uvicorn
     volumes:
       - static_volume:/var/www/app/static
-    restart: on-failure
-    command: sh -c "python manage.py collectstatic --no-input && python manage.py migrate && python manage.py rqworker high default low & && python manage.py rqscheduler & && gunicorn monitor.asgi:application --bind :8000 --workers 4 -k uvicorn.workers.UvicornWorker --log-level debug"
+    restart: always
     expose:
       - 8000
     env_file:
-      - ./monitor/.env
+      - .env
     links:
       - postgres
       - redis
     depends_on:
       - postgres
       - redis
-  
+
   postgres:
     image: postgres
     container_name: django-monitor-postgres
-    restart: on-failure
+    restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     ports:
-      - 5432:5432
+      - "5432:5432"
     environment:
       - POSTGRES_DB=$POSTGRES_NAME
       - POSTGRES_USER=$POSTGRES_USER
       - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
   
+  redis:
+    image: redis
+    restart: always
+    container_name: django-monitor-redis
+  
   nginx:
     build: ./nginx
     container_name: django-monitor-nginx
+    restart: always
     volumes:
       - static_volume:/var/www/app/static
     ports:
       - $PORT:80
+    links:
+      - monitor
     depends_on:
       - monitor
   
-  redis:
-    image: redis
-    container_name: django-monitor-redis
 
 volumes:
   postgres_data:
