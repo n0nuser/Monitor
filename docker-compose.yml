@@ -4,7 +4,7 @@ services:
     build: .
     container_name: django-monitor-uvicorn
     volumes:
-      - static_volume:/var/www/app/static
+      - static_volume:/var/www/app/staticfiles
     restart: always
     expose:
       - 8000
@@ -40,7 +40,7 @@ services:
     container_name: django-monitor-nginx
     restart: always
     volumes:
-      - static_volume:/var/www/app/static
+      - static_volume:/var/www/app/staticfiles
     ports:
       - $PORT:80
     links:
