@@ -18,8 +18,8 @@ RUN pip3 install -r requirements.txt
 FROM python:3.9-slim
 
 # create the appropriate directories
-ENV HOME=/home/monitor
-ENV APP_HOME=/home/monitor/monitor
+ENV HOME=/var/www
+ENV APP_HOME=/var/www/app
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 RUN groupadd -r monitor && useradd -m -r -g monitor monitor
@@ -29,8 +29,7 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 WORKDIR $APP_HOME
 COPY monitor .
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-RUN mkdir staticfiles && chown -R monitor:monitor .
+RUN chmod +x /entrypoint.sh && mkdir staticfiles && chown -R monitor:monitor .
 USER monitor
 
 EXPOSE 8000

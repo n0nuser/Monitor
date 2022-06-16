@@ -80,7 +80,7 @@ def register_user(request):
                     "url": "https://nonuser.es",
                     "header": f"Welcome to Monitor {username}",
                     "message": "Congratulations on setting up your account!"
-                    "You now have access to all account features!",
+                    "<br>You now have access to all account features!",
                 },
             )
             send_email_task(
