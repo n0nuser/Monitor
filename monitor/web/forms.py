@@ -1,7 +1,9 @@
 import requests
+from requests.auth import HTTPBasicAuth
 from django import forms
 from web.models import AlertEmail, AlertWebhook, CustomUser, Agent, AgentConfig
 from django.contrib.auth.forms import UserCreationForm
+from rest_framework.authtoken.models import Token
 
 
 class SignUpForm(UserCreationForm):
@@ -41,21 +43,30 @@ class ExecuteForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
-        requestTimeout = cleaned_data['timeout_for_request']
-        commandTimeout = cleaned_data['timeout_for_command']
+        requestTimeout = cleaned_data["timeout_for_request"]
+        commandTimeout = cleaned_data["timeout_for_command"]
         if requestTimeout <= commandTimeout:
-            raise forms.ValidationError('The timeout for request must be greater than the timeout for \
-                the command in order for the request to succeed.')
+            raise forms.ValidationError(
+                "The timeout for request must be greater than the timeout for \
+                the command in order for the request to succeed."
+            )
         return cleaned_data
 
     def execute_command(self, host, port):
         command = self.cleaned_data["command"]
         timeout_for_request = self.cleaned_data["timeout_for_request"]
         timeout_for_command = self.cleaned_data["timeout_for_command"]
+        user = Agent.objects.get(ip=host, port=port).user
+        user_token = Token.objects.get(user=user).key
         json_data = {"command": command, "timeout": timeout_for_command}
         url = f"http://{host}:{port}/command/?command={command}&timeout={timeout_for_command}"
         try:
-            response = requests.post(url, json=json_data, timeout=timeout_for_request)
+            response = requests.post(
+                url,
+                json=json_data,
+                timeout=timeout_for_request,
+                auth=HTTPBasicAuth("monitor", user_token),
+            )
             return response.json()
         except requests.exceptions.ReadTimeout:
             response = {
