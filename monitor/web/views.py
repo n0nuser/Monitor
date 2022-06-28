@@ -614,15 +614,7 @@ class AlertListView(ListView):
             date_to = datetime.strptime(endDate, "%Y-%m-%d")
         else:
             now = timezone.now()
-            date_from = timezone.datetime(
-                now.year,
-                now.month,
-                now.day,
-                now.hour + 1,
-                now.minute,
-                now.second,
-                tzinfo=timezone.get_current_timezone(),
-            )
+            date_from = now + timedelta(hours=1)
             date_to = date_from + timedelta(days=1)
 
         date_from = date_from - timedelta(1)
