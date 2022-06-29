@@ -22,6 +22,7 @@ from web.tasks import send_email_task
 from web.utils import format_bytes
 import contextlib
 import json
+import re
 
 
 from web.models import Agent, AgentConfig, AlertEmail, AlertWebhook, Metric, Alert, CustomUser
@@ -468,6 +469,11 @@ class MetricListView(ListView):
     model = Metric
     paginate_by = 5
     template_name = "metric/list.html"
+
+    def setup(self, request, *args, **kwargs) -> None:
+        request.GET.get("page")
+        request.META["QUERY_STRING"] = re.sub("(&|\?)page=(.)*", "", request.META.get("QUERY_STRING", ""))
+        return super().setup(request, *args, **kwargs)
 
     def get_paginate_by(self, queryset):
         return self.kwargs.get("show") or self.request.GET.get("show") or self.paginate_by
