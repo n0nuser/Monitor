@@ -1,4 +1,4 @@
-echo "Updating requirements.txt with pyproject.toml"
+echo "Updating requirements.txt with poetry.lock"
 poetry export -f requirements.txt --output requirements.txt --without-hashes
 
 echo "Docker-Compose Build"

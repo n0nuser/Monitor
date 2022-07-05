@@ -1,8 +1,5 @@
 from django.contrib import admin
 
-# pyright: reportMissingModuleSource=false
-# pyright: reportMissingImports=false
-
 # Register your models here.
 from web.models import AgentConfig, AlertEmail, AlertWebhook, CustomUser, Agent, Metric, Alert
 from import_export.admin import ImportExportModelAdmin

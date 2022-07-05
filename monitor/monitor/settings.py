@@ -66,7 +66,7 @@ INSTALLED_APPS = [
     "rest_api",
     "django_minify_html",
     "crispy_forms",
-    "django_extensions"
+    "django_extensions",
 ]
 
 
@@ -83,7 +83,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "monitor.urls"
-CRISPY_TEMPLATE_PACK = 'bootstrap4'
+CRISPY_TEMPLATE_PACK = "bootstrap4"
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "login"
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")  # ROOT dir for templates

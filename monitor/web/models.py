@@ -58,7 +58,7 @@ class Metric(models.Model):
     agent = models.ForeignKey("Agent", related_name="metrics", on_delete=models.CASCADE)
     # If created is None, set created to timezone.now()
     # Created is None when an agent send their metric
-    # Is not None if it's imported via import_export package
+    # Created is not None if when an agent is imported via import_export package
     created = models.DateTimeField(default=timezone.now, blank=True, null=False)
     status = models.JSONField()
     metrics = models.JSONField()
@@ -158,10 +158,11 @@ class Alert(models.Model):
         ordering = ["created"]
         verbose_name_plural = "Alerts"
 
+
 ######################################################################################################################
 
-# Se gestiona por usuario en vez de por agente
-# Si se quiere individualizar la gestión de alertas por agente, que el usuario se cree otra cuenta.
+# Alerts are managed per user instead of per agent.
+# In case the user wants to individually manage alerts, user should create a new account.
 
 
 class AlertEmail(models.Model):
@@ -187,23 +188,27 @@ class AlertWebhook(models.Model):
     class Meta:
         ordering = ["name", "webhook"]
 
+
 ######################################################################################################################
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
+    """Creates a token for the new user."""
     if created:
         Token.objects.create(user=instance)
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_alert_email(sender, instance=None, created=False, **kwargs):
+    """Creates a alert email for the new user, with the same email as the user."""
     if created:
         AlertEmail.objects.create(user=instance, name="Default", email=instance.email)
 
 
 @receiver(post_save, sender=Agent)
 def update_agent_name_config(sender, instance=None, created=False, **kwargs):
+    """Creates a new configuration entry for the new agent. If the agent is already created, just updates the name."""
     if created:
         AgentConfig.objects.create(agent=instance)
     else:

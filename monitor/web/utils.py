@@ -5,9 +5,9 @@ def format_bytes(bytes: int, suffix="B"):
         1253656678 => '1.17 GB'
     Args:
         bytes (int): Numeric size to format
-        suffix (str): Format of introduced size: 'B', 'K', 'M', 'G', 'T', 'P'
+        suffix (str, optional): Format of introduced size: 'B', 'K', 'M', 'G', 'T', 'P'. Defaults to 'B'.
     Returns:
-        string: Formatted size
+        str: Formatted size
     """
     bytes_format = bytes
     factor = 1024

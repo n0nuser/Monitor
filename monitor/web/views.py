@@ -25,16 +25,8 @@ import json
 import re
 
 
-from web.models import Agent, AgentConfig, AlertEmail, AlertWebhook, Metric, Alert, CustomUser
-from web.forms import (
-    AgentConfigForm,
-    AlertEmailForm,
-    AlertWebhookForm,
-    CustomUserForm,
-    ExecuteForm,
-    SignUpForm,
-    AgentForm,
-)
+import web.models as models
+import web.forms as forms
 
 # Create your views here.
 
@@ -59,11 +51,10 @@ def pages(request):
 
 
 def register_user(request):
-    # sourcery skip: extract-method, inline-immediately-returned-variable
     success = False
 
     if request.method == "POST":
-        form = SignUpForm(request.POST)
+        form = forms.SignUpForm(request.POST)
         if form.is_valid():
             form.save()
             username = form.cleaned_data.get("username")
@@ -93,7 +84,7 @@ def register_user(request):
         else:
             messages.error(request=request, message="Form is not valid.")
     else:
-        form = SignUpForm()
+        form = forms.SignUpForm()
 
     return render(
         request,
@@ -129,7 +120,7 @@ class PasswordResetCompleteView(SuccessMessageMixin, PasswordResetCompleteView):
 
 @method_decorator(login_required, name="dispatch")
 class Profile(TemplateView):
-    model = CustomUser
+    model = models.CustomUser
     template_name = "accounts/profile.html"
 
     def get_context_data(self):
@@ -140,8 +131,8 @@ class Profile(TemplateView):
 
 @method_decorator(login_required, name="dispatch")
 class UpdateProfile(UpdateView):
-    model = CustomUser
-    form_class = CustomUserForm
+    model = models.CustomUser
+    form_class = forms.CustomUserForm
     template_name = "common/edit.html"
     success_url = reverse_lazy("profile")
 
@@ -163,8 +154,8 @@ def handler500(request, template_name="errors/500.html"):
 
 @method_decorator(login_required, name="dispatch")
 class HostCreateView(CreateView):
-    model = Agent
-    form_class = AgentForm
+    model = models.Agent
+    form_class = forms.AgentForm
     success_url = reverse_lazy("host-list")
     template_name = "common/add.html"
 
@@ -175,28 +166,28 @@ class HostCreateView(CreateView):
 
 @method_decorator(login_required, name="dispatch")
 class HostUpdateView(UpdateView):
-    model = Agent
-    form_class = AgentForm
+    model = models.Agent
+    form_class = forms.AgentForm
     success_url = reverse_lazy("host-list")
     template_name = "common/edit.html"
 
     def get_queryset(self):
-        return Agent.objects.filter(token=self.kwargs["pk"], user=self.request.user)
+        return models.Agent.objects.filter(token=self.kwargs.get("pk", ""), user=self.request.user)
 
 
 @method_decorator(login_required, name="dispatch")
 class HostDeleteView(DeleteView):
-    model = Agent
+    model = models.Agent
     success_url = reverse_lazy("host-list")
     template_name = "common/delete.html"
 
     def get_queryset(self):
-        return Agent.objects.filter(token=self.kwargs["pk"], user=self.request.user)
+        return models.Agent.objects.filter(token=self.kwargs.get("pk", ""), user=self.request.user)
 
 
 @method_decorator(login_required, name="dispatch")
 class HostListView(ListView):
-    model = Agent
+    model = models.Agent
     paginate_by = 5
     template_name = "host/list.html"
 
@@ -209,15 +200,15 @@ class HostListView(ListView):
 
 @method_decorator(login_required, name="dispatch")
 class HostDetailView(DetailView):
-    model = Agent
+    model = models.Agent
     template_name = "host/detail.html"
 
     def get_object(self, queryset=None):
-        return get_object_or_404(Agent, token=self.kwargs["pk"], user=self.request.user)
+        return get_object_or_404(models.Agent, token=self.kwargs.get("pk", ""), user=self.request.user)
 
     def get_context_data(self, **kwargs):  # sourcery skip: extract-method
         context = super().get_context_data(**kwargs)
-        metrics = Metric.objects.filter(agent=self.kwargs["pk"], agent__user=self.request.user)
+        metrics = models.Metric.objects.filter(agent=self.kwargs.get("pk", ""), agent__user=self.request.user)
 
         if not metrics:
             context["last"] = None
@@ -235,7 +226,7 @@ class HostDetailView(DetailView):
         try:
             lastMetric, metricsRangeDate = self._rangeDate(self.request, metrics)
             metrics = list(metricsRangeDate)
-            lastMetric["metrics"]["uptime"] = lastMetric["metrics"]["uptime"][:-7]
+            lastMetric["metrics"]["uptime"] = lastMetric.get("metrics", {}).get("uptime", "")[:-7]
             context["last"] = lastMetric
             context["lastDisk"] = self._lastDisk(lastMetric)
             context["chartData"] = self._chartData(metrics)
@@ -246,56 +237,67 @@ class HostDetailView(DetailView):
 
         # Get the latest metric
         with contextlib.suppress(TypeError):
-            software = {
-                # Software
-                "Hostname": lastMetric["metrics"]["host"],
-                "OS": lastMetric["metrics"]["os"],
-                "OS Version": lastMetric["metrics"]["os_version"],
-            }
-            context["software"] = software
+            self._software_data(context, lastMetric)
 
-            hardware = {
-                # Hardware
-                "Architecture": lastMetric["metrics"]["architecture"],
-                "CPU Physical cores": lastMetric["metrics"]["cpu_core_physical"],
-                "CPU Total cores": lastMetric["metrics"]["cpu_core_total"],
-                "CPU Maximum frequency": str(lastMetric["metrics"]["cpu_freq"]["max"]) + " MHz",
-                "CPU Minimum frequency": str(lastMetric["metrics"]["cpu_freq"]["min"]) + " MHz",
-                "RAM": format_bytes(lastMetric["metrics"]["ram"]["total"]),
-            }
-            context["hardware"] = hardware
+            self._hardware_data(context, lastMetric)
 
-            partitions = {
-                partition: {
-                    "Used": format_bytes(values["used"]),
-                    "Total": format_bytes(values["total"]),
-                    "Mount Point": values["mountpoint"],
-                    "File System Type": values["fstype"],
-                }
-                for partition, values in lastMetric["metrics"]["disk"].items()
-            }
+            self._disk_partitions(context, lastMetric)
 
-            context["disk"] = partitions
-
-            nic_adapters = {}
-            for adapter, values in lastMetric["metrics"]["ip"].items():
-                ip = ""
-                mac = ""
-                netmask = ""
-                for address, values2 in values.items():
-                    if values2["family"] == 2:
-                        ip = address
-                        netmask = values2["netmask"]
-                    elif values2["family"] == 17:
-                        mac = address
-                nic_adapters[adapter] = {
-                    "IP Address": ip,
-                    "MAC Address": mac,
-                    "Network Mask": netmask,
-                }
-            context["ip"] = nic_adapters
+            self._network_adapters(context, lastMetric)
 
         return context
+
+    def _software_data(self, context, lastMetric):
+        software = {
+            # Software
+            "Hostname": lastMetric.get("metrics", {}).get("host", ""),
+            "OS": lastMetric.get("metrics", {}).get("os", ""),
+            "OS Version": lastMetric.get("metrics", {}).get("os_version", ""),
+        }
+        context["software"] = software
+
+    def _hardware_data(self, context, lastMetric):
+        hardware = {
+            # Hardware
+            "Architecture": lastMetric.get("metrics", {}).get("architecture", ""),
+            "CPU Physical cores": lastMetric.get("metrics", {}).get("cpu_core_physical", ""),
+            "CPU Total cores": lastMetric.get("metrics", {}).get("cpu_core_total", ""),
+            "CPU Maximum frequency": str(lastMetric.get("metrics", {}).get("cpu_freq", {}).get("max", "")) + " MHz",
+            "CPU Minimum frequency": str(lastMetric.get("metrics", {}).get("cpu_freq", {}).get("min", "")) + " MHz",
+            "RAM": format_bytes(lastMetric.get("metrics", {}).get("ram", {}).get("total", "")),
+        }
+        context["hardware"] = hardware
+
+    def _disk_partitions(self, context, lastMetric):
+        partitions = {
+            partition: {
+                "Used": format_bytes(values.get("used", "")),
+                "Total": format_bytes(values.get("total", "")),
+                "Mount Point": values.get("mountpoint", ""),
+                "File System Type": values.get("fstype", ""),
+            }
+            for partition, values in lastMetric.get("metrics", {}).get("disk", "").items()
+        }
+        context["disk"] = partitions
+
+    def _network_adapters(self, context, lastMetric):
+        nic_adapters = {}
+        for adapter, values in lastMetric.get("metrics", {}).get("ip", "").items():
+            ip = ""
+            mac = ""
+            netmask = ""
+            for address, values2 in values.items():
+                if values2["family"] == 2:
+                    ip = address
+                    netmask = values2["netmask"]
+                elif values2["family"] == 17:
+                    mac = address
+            nic_adapters[adapter] = {
+                "IP Address": ip,
+                "MAC Address": mac,
+                "Network Mask": netmask,
+            }
+        context["ip"] = nic_adapters
 
     def _rangeDate(self, request, metrics):
         lastMetric = vars(metrics.last())
@@ -305,7 +307,7 @@ class HostDetailView(DetailView):
             date_from = datetime.strptime(startDate, "%Y-%m-%d")
             date_to = datetime.strptime(endDate, "%Y-%m-%d")
         else:
-            date_to = lastMetric["created"]
+            date_to = lastMetric.get("created", "")
             date_from = date_to - timedelta(hours=1)
         return lastMetric, metrics.filter(created__range=(date_from, date_to))
 
@@ -313,11 +315,11 @@ class HostDetailView(DetailView):
         free = 0.0
         used = 0.0
         total = 0.0
-        diskData = lastMetric["metrics"]["disk"]
+        diskData = lastMetric.get("metrics", {}).get("disk", "")
         for partition in diskData.keys():
-            free = free + diskData[partition]["free"]
-            used = used + diskData[partition]["used"]
-            total = total + diskData[partition]["total"]
+            free = free + diskData.get(partition, {}).get("free", "")
+            used = used + diskData.get(partition, {}).get("used", "")
+            total = total + diskData.get(partition, {}).get("total", "")
         return {
             "free": free,
             "free_formatted": format_bytes(free),
@@ -332,13 +334,13 @@ class HostDetailView(DetailView):
         for index, i in enumerate(metrics):
             chartData.append(
                 {
-                    "date": vars(i)["date"],
-                    "cpu": vars(i)["metrics"]["cpu_percent"],
-                    "ram": vars(i)["metrics"]["ram"]["percent"],
+                    "date": vars(i).get("date", ""),
+                    "cpu": vars(i).get("metrics", {}).get("cpu_percent", ""),
+                    "ram": vars(i).get("metrics", {}).get("ram", {}).get("percent", ""),
                 }
             )
             with contextlib.suppress(TypeError):
-                battery_percent = vars(i)["metrics"]["battery"]["percent"]
+                battery_percent = vars(i).get("metrics", {}).get("battery", {}).get("percent", "")
                 chartData[index]["battery"] = round(battery_percent, 2)
         return json.dumps(list(chartData), cls=DjangoJSONEncoder)
 
@@ -348,7 +350,7 @@ class HostDetailView(DetailView):
 
 @method_decorator(login_required, name="dispatch")
 class HostExecuteFormView(FormView):
-    form_class = ExecuteForm
+    form_class = forms.ExecuteForm
     template_name = "host/execute.html"
 
     def get_context_data(self, **kwargs):
@@ -357,13 +359,13 @@ class HostExecuteFormView(FormView):
         now you can use {{ metric }} within the template
         """
         context = super().get_context_data(**kwargs)
-        context["host"] = get_object_or_404(Agent, pk=self.kwargs["pk"], user=self.request.user)
+        context["host"] = get_object_or_404(models.Agent, pk=self.kwargs.get("pk", ""), user=self.request.user)
         return context
 
     def form_valid(self, form, **kwargs):
         # This method is called when valid form data has been POSTed.
         # It should return an HttpResponse.
-        host = get_object_or_404(Agent, pk=self.kwargs["pk"], user=self.request.user)
+        host = get_object_or_404(models.Agent, pk=self.kwargs.get("pk", ""), user=self.request.user)
         response = form.execute_command(host.ip, host.port)
         # response = json.dumps(response, cls=DjangoJSONEncoder)
         # url = f"{self.request.path}#response"
@@ -378,30 +380,30 @@ class HostExecuteFormView(FormView):
 
 @method_decorator(login_required, name="dispatch")
 class HostConfigUpdateView(UpdateView):
-    model = AgentConfig
-    form_class = AgentConfigForm
+    model = models.AgentConfig
+    form_class = forms.AgentConfigForm
     template_name = "common/edit.html"
 
     def get_object(self):
         # Needed as Agent's PK was passed instead of Config's PK
-        agent = Agent.objects.get(token=self.kwargs["pk"], user=self.request.user)
-        return AgentConfig.objects.get(agent=agent)
+        agent = models.Agent.objects.get(token=self.kwargs.get("pk", ""), user=self.request.user)
+        return models.AgentConfig.objects.get(agent=agent)
 
     def form_valid(self, form):
         form.instance.user = self.request.user
-        form.instance.agent = Agent.objects.get(token=self.kwargs["pk"], user=self.request.user)
+        form.instance.agent = models.Agent.objects.get(token=self.kwargs.get("pk", ""), user=self.request.user)
         form.save()
         # Definition of SuccessURL from source code
         # This way it lets me pass args from the actual URL to reverse_lazy
-        url = reverse_lazy("config-detail", kwargs={"pk": self.kwargs["pk"]})
+        url = reverse_lazy("config-detail", kwargs={"pk": self.kwargs.get("pk", "")})
         return HttpResponseRedirect(url)
 
 
 @login_required
 def config_detail(request, pk):
     HTML_FILE = "config/detail.html"
-    host = get_object_or_404(Agent, token=pk, user=request.user)
-    config_object = get_object_or_404(AgentConfig, agent=host)
+    host = get_object_or_404(models.Agent, token=pk, user=request.user)
+    config_object = get_object_or_404(models.AgentConfig, agent=host)
     config_dict = vars(config_object)
     config_dict.pop("_state")
 
@@ -419,31 +421,31 @@ def config_detail(request, pk):
     }
 
     logging = {
-        "filename": config_dict["logging_filename"],
-        "level": config_dict["logging_level"],
+        "filename": config_dict.get("logging_filename", ""),
+        "level": config_dict.get("logging_level", ""),
     }
 
     metrics = {
-        "enable_logfile": config_dict["metrics_enable_logfile"],
-        "get_endpoint": config_dict["metrics_get_endpoint"],
-        "log_filename": config_dict["metrics_log_filename"],
-        "post_interval": config_dict["metrics_post_interval"],
+        "enable_logfile": config_dict.get("metrics_enable_logfile", ""),
+        "get_endpoint": config_dict.get("metrics_get_endpoint", ""),
+        "log_filename": config_dict.get("metrics_log_filename", ""),
+        "post_interval": config_dict.get("metrics_post_interval", ""),
     }
 
     thresholds = {
-        "cpu_percent": config_dict["threshold_cpu_percent"],
-        "ram_percent": config_dict["threshold_ram_percent"],
+        "cpu_percent": config_dict.get("threshold_cpu_percent", ""),
+        "ram_percent": config_dict.get("threshold_ram_percent", ""),
     }
 
     uvicorn = {
-        "backlog": config_dict["uvicorn_backlog"],
-        "debug": config_dict["uvicorn_debug"],
-        "host": config_dict["uvicorn_host"],
-        "log_level": config_dict["uvicorn_log_level"],
-        "port": config_dict["uvicorn_port"],
-        "reload": config_dict["uvicorn_reload"],
-        "timeout_keep_alive": config_dict["uvicorn_timeout_keep_alive"],
-        "workers": config_dict["uvicorn_workers"],
+        "backlog": config_dict.get("uvicorn_backlog", ""),
+        "debug": config_dict.get("uvicorn_debug", ""),
+        "host": config_dict.get("uvicorn_host", ""),
+        "log_level": config_dict.get("uvicorn_log_level", ""),
+        "port": config_dict.get("uvicorn_port", ""),
+        "reload": config_dict.get("uvicorn_reload", ""),
+        "timeout_keep_alive": config_dict.get("uvicorn_timeout_keep_alive", ""),
+        "workers": config_dict.get("uvicorn_workers", ""),
     }
 
     data = {
@@ -456,7 +458,7 @@ def config_detail(request, pk):
         "uvicorn": uvicorn,
     }
     data = json.dumps(data, indent=4, sort_keys=True)
-    form = AgentConfigForm(request.POST or None, instance=config_object)
+    form = forms.AgentConfigForm(request.POST or None, instance=config_object)
     context = {"form": form, "data": data, "host": host}
     return render(request, HTML_FILE, context)
 
@@ -466,7 +468,7 @@ def config_detail(request, pk):
 
 @method_decorator(login_required, name="dispatch")
 class MetricListView(ListView):
-    model = Metric
+    model = models.Metric
     paginate_by = 5
     template_name = "metric/list.html"
 
@@ -479,52 +481,44 @@ class MetricListView(ListView):
         return self.kwargs.get("show") or self.request.GET.get("show") or self.paginate_by
 
     def get_queryset(self):
-        host = get_object_or_404(Agent, token=self.kwargs["pk"], user=self.request.user)
+        host = get_object_or_404(models.Agent, token=self.kwargs.get("pk", ""), user=self.request.user)
+        metrics = models.Metric.objects.filter(agent=host, agent__user=self.request.user).order_by("-created")
+
         startDate = self.request.GET.get("start")
         endDate = self.request.GET.get("end")
+        if startDate and endDate:
+            return metrics
         if startDate:
-            if not endDate:
-                endDate = startDate
-            return self._getAlertsByDate(startDate, endDate, host)
+            endDate = startDate
         elif endDate:
-            return self._getAlertsByDate(startDate, endDate, host)
-        else:
-            return Metric.objects.filter(agent__user=self.request.user).order_by("-created")
+            startDate = endDate
+        return self._getMetricsByDate(startDate, endDate, metrics)
 
-    def _getAlertsByDate(self, startDate, endDate, agent):
+    def _getMetricsByDate(self, startDate, endDate, metrics):
         date_from = datetime.strptime(startDate, "%Y-%m-%d")
         date_to = datetime.strptime(endDate, "%Y-%m-%d")
-        return (
-            Metric.objects.all()
-            .filter(created__date=date_from, agent=agent, agent__user=self.request.user)
-            .order_by("-created")
-            if startDate == endDate
-            else Alert.objects.filter(agent__user=self.request.user)
-            .filter(
-                created__range=(date_from, date_to),
-                agent=agent,
-                agent__user=self.request.user,
-            )
-            .order_by("-created")
-        )
+        if startDate == endDate:
+            return metrics.filter(created__date=date_from)
+        else:
+            return metrics.filter(created__range=(date_from, date_to))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["host"] = get_object_or_404(Agent, token=self.kwargs["pk"], user=self.request.user)
+        context["host"] = get_object_or_404(models.Agent, token=self.kwargs.get("pk", ""), user=self.request.user)
         return context
 
 
 @method_decorator(login_required, name="dispatch")
 class MetricDetailView(DetailView):
-    model = Metric
+    model = models.Metric
     template_name = "metric/detail.html"
 
     def get_object(self, queryset=None):
         return get_object_or_404(
-            Metric,
-            agent=self.kwargs["pk"],
+            models.Metric,
+            agent=self.kwargs.get("pk", ""),
             agent__user=self.request.user,
-            pk=self.kwargs["pk1"],
+            pk=self.kwargs.get("pk1", ""),
         )
 
     def get_context_data(self, **kwargs):
@@ -536,17 +530,17 @@ class MetricDetailView(DetailView):
 
 @method_decorator(login_required, name="dispatch")
 class MetricDeleteView(DeleteView):
-    model = Metric
+    model = models.Metric
     success_url = reverse_lazy("host-detail")
     template_name = "common/delete.html"
 
     def get_object(self):
-        return get_object_or_404(Metric, pk=self.kwargs["pk1"], agent__user=self.request.user)
+        return get_object_or_404(models.Metric, pk=self.kwargs.get("pk1", ""), agent__user=self.request.user)
 
     def form_valid(self, form):
         # Definition of form_valid from source code (BaseDeleteView)
         # This way it lets me pass args from the actual URL to reverse_lazy
-        url = reverse_lazy("metric-list", kwargs={"pk": self.kwargs["pk"]})
+        url = reverse_lazy("metric-list", kwargs={"pk": self.kwargs.get("pk", "")})
         self.object.delete()
         return HttpResponseRedirect(url)
 
@@ -556,7 +550,7 @@ class MetricDeleteView(DeleteView):
 
 @method_decorator(login_required, name="dispatch")
 class AlertListView(ListView):
-    model = Alert
+    model = models.Alert
     paginate_by = 5
     template_name = "alert/list.html"
 
@@ -564,27 +558,26 @@ class AlertListView(ListView):
         return self.kwargs.get("show") or self.request.GET.get("show") or self.paginate_by
 
     def get_queryset(self):
+        host = get_object_or_404(models.Agent, token=self.kwargs.get("pk", ""), user=self.request.user)
+        alerts = models.Alert.objects.filter(agent=host, agent__user=self.request.user).order_by("-created")
+
         startDate = self.request.GET.get("start")
         endDate = self.request.GET.get("end")
+        if startDate and endDate:
+            return alerts
         if startDate:
-            if not endDate:
-                endDate = startDate
-            return self._getAlertsByDate(startDate, endDate)
+            endDate = startDate
         elif endDate:
-            return self._getAlertsByDate(startDate, endDate)
-        else:
-            return Alert.objects.filter(agent__user=self.request.user).order_by("-created")
+            startDate = endDate
+        return self._getAlertsByDate(startDate, endDate, alerts)
 
-    def _getAlertsByDate(self, startDate, endDate):
+    def _getAlertsByDate(self, startDate, endDate, alerts):
         date_from = datetime.strptime(startDate, "%Y-%m-%d")
         date_to = datetime.strptime(endDate, "%Y-%m-%d")
-        return (
-            Alert.objects.all().order_by("-created").filter(created__date=date_from, agent__user=self.request.user)
-            if startDate == endDate
-            else Alert.objects.filter(agent__user=self.request.user)
-            .order_by("-created")
-            .filter(created__range=(date_from, date_to), agent__user=self.request.user)
-        )
+        if startDate == endDate:
+            return alerts.filter(created__date=date_from)
+        else:
+            return alerts.filter(created__range=(date_from, date_to))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -594,13 +587,13 @@ class AlertListView(ListView):
         date_from, date_to = self._getAlertsByDateOrOneDay(startDate, endDate)
 
         queryset = (
-            Alert.objects.filter(
+            models.Alert.objects.filter(
                 created__gt=date_from,
                 created__lt=date_to,
                 agent__user=self.request.user,
             )
-            .order_by("created")
             .values("created")
+            .order_by("created")
             .annotate(created_count=Count("created"))
         )
         data = list(queryset.values_list("created_count", flat=True))
@@ -630,33 +623,33 @@ class AlertListView(ListView):
 
 @method_decorator(login_required, name="dispatch")
 class AlertDetailView(DetailView):
-    model = Alert
+    model = models.Alert
     template_name = "alert/detail.html"
 
     def get_object(self, queryset=None):
         # Needed as we pass two PKs instead of one
         return get_object_or_404(
-            Alert,
-            agent=self.kwargs["pk"],
+            models.Alert,
+            agent=self.kwargs.get("pk", ""),
             agent__user=self.request.user,
-            id=self.kwargs["pk1"],
+            id=self.kwargs.get("pk1", ""),
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["processes"] = json.dumps(context["object"].__dict__["processes"], indent=4, sort_keys=True)
-        # context["object"]["processes"] = json.dumps(context["object"]["processes"], cls=DjangoJSONEncoder)
+        processes = vars(context.get("object", "")).get("processes", "")
+        context["processes"] = json.dumps(processes, indent=4, sort_keys=True)
         return context
 
 
 @method_decorator(login_required, name="dispatch")
 class AlertDeleteView(DeleteView):
-    model = Alert
+    model = models.Alert
     success_url = reverse_lazy("home")
     template_name = "common/delete.html"
 
     def get_object(self):
-        return get_object_or_404(Alert, pk=self.kwargs["pk1"], agent__user=self.request.user)
+        return get_object_or_404(models.Alert, pk=self.kwargs.get("pk1", ""), agent__user=self.request.user)
 
 
 ######################################################################################################################
@@ -664,22 +657,22 @@ class AlertDeleteView(DeleteView):
 
 @method_decorator(login_required, name="dispatch")
 class NotificationListView(ListView):
-    model = AlertEmail
+    model = models.AlertEmail
     template_name = "notification/list.html"
 
     def get_queryset(self):
-        return AlertEmail.objects.filter(user=self.request.user)
+        return models.AlertEmail.objects.filter(user=self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["webhook_list"] = AlertWebhook.objects.filter(user=self.request.user)
+        context["webhook_list"] = models.AlertWebhook.objects.filter(user=self.request.user)
         return context
 
 
 @method_decorator(login_required, name="dispatch")
 class EmailCreateView(CreateView):
-    model = AlertEmail
-    form_class = AlertEmailForm
+    model = models.AlertEmail
+    form_class = forms.AlertEmailForm
     success_url = reverse_lazy("notification-list")
     template_name = "common/add.html"
 
@@ -690,15 +683,15 @@ class EmailCreateView(CreateView):
 
 @method_decorator(login_required, name="dispatch")
 class EmailDeleteView(DeleteView):
-    model = AlertEmail
+    model = models.AlertEmail
     success_url = reverse_lazy("notification-list")
     template_name = "common/delete.html"
 
 
 @method_decorator(login_required, name="dispatch")
 class WebhookCreateView(CreateView):
-    model = AlertWebhook
-    form_class = AlertWebhookForm
+    model = models.AlertWebhook
+    form_class = forms.AlertWebhookForm
     success_url = reverse_lazy("notification-list")
     template_name = "common/add.html"
 
@@ -709,6 +702,6 @@ class WebhookCreateView(CreateView):
 
 @method_decorator(login_required, name="dispatch")
 class WebhookDeleteView(DeleteView):
-    model = AlertWebhook
+    model = models.AlertWebhook
     success_url = reverse_lazy("notification-list")
     template_name = "common/delete.html"

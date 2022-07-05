@@ -1,9 +1,9 @@
-import requests
-from requests.auth import HTTPBasicAuth
 from django import forms
-from web.models import AlertEmail, AlertWebhook, CustomUser, Agent, AgentConfig
 from django.contrib.auth.forms import UserCreationForm
+from requests.auth import HTTPBasicAuth
 from rest_framework.authtoken.models import Token
+from web.models import AlertEmail, AlertWebhook, CustomUser, Agent, AgentConfig
+import requests
 
 
 class SignUpForm(UserCreationForm):
@@ -77,7 +77,10 @@ class ExecuteForm(forms.Form):
         except requests.exceptions.ConnectionError:
             response = {
                 "status": "Error",
-                "stderr": f"Connection error. Could not connect to the agent:<br>· Check if the agent is running succesfully.<br>· Check IP ({host}) and Port ({port}) configuration.<br>· Check port forwarding in the router in case the agent is outside your network.",
+                "stderr": "Connection error. Could not connect to the agent:<br>"
+                + "· Check if the agent is running succesfully.<br>"
+                + f"· Check IP ({host}) and Port ({port}) configuration.<br>"
+                + "· Check port forwarding in the router in case the agent is outside your network.",
             }
             return response
 
@@ -127,8 +130,10 @@ class AgentConfigForm(forms.ModelForm):
             "metrics_post_interval": "Interval in seconds to send metrics",
             "threshold_cpu_percent": "Percentage of CPU usage to trigger alert",
             "threshold_ram_percent": "Percentage of RAM usage to trigger alert",
-            "warning_time_interval": "Time interval in minutes for Warning status in which alerts are accumulated, or metrics aren't received",
-            "bad_time_interval": "Time interval in minutes for Bad status in which alerts are accumulated, or metrics aren't received",
+            "warning_time_interval": "Time interval in minutes for Warning status"
+            + " in which alerts are accumulated, or metrics aren't received",
+            "bad_time_interval": "Time interval in minutes for Bad status in which"
+            + " alerts are accumulated, or metrics aren't received",
             "uvicorn_debug": "Enable debug mode",
             "uvicorn_reload": "Enable reloading of the uvicorn server",
             "uvicorn_backlog": "Backlog of the uvicorn server",

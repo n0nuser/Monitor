@@ -8,40 +8,53 @@ The webpage will be used by the user to manage its server/computers remotely and
 
 The REST API will receive the metrics and the alerts from the agents.
 
-## Roadmap
-
-For Roadmap the [this issue](https://github.com/n0nuser/Monitor/issues/2).
-
 ## Installation and use
 
-Install dependencies and enter the Poetry virtual environment:
+Modify the `.env` file to your needs.
 
-```shell
-poetry install
-poetry shell
+```env
+ALLOWED_HOSTS=127.0.0.1,localhost,192.168.0.28
+DEBUG=False
+DJANGO_SUPERUSER_EMAIL=admin@monitor.tfg
+DJANGO_SUPERUSER_PASSWORD=admin
+DJANGO_SUPERUSER_USERNAME=admin
+EMAIL_HOST=smtp.gmail.com
+EMAIL_HOST_PASSWORD=password
+EMAIL_HOST_USER=account@gmail.com
+EMAIL_PORT=587
+PORT=8000
+POSTGRES_NAME=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_USER=postgres
+SECRET_KEY=myDummySecretKey
+SERVER=YOUR FQDN
 ```
 
-> If you don't have Poetry: `pip3 install poetry`
+Execute the `docker_compose_up.sh` file to deploy the containers.
 
-Inside `monitor/` run the Django web:
-
-```python
-python3 manage.py makemigrations web
-python3 manage.py migrate
-python3 manage.py createsuperuser --email admin@example.com --username admin
-python3 manage.py runserver
+```sh
+chmod +x docker_compose_up.sh
+./docker_compose_up.sh
 ```
 
-## Get user token
+## Authentication
 
-```
-# curl -X POST -d "username=YOUR_EMAIL&password=YOUR_PASSWORD"  http://localhost:8000/api-token-auth/
-curl -X POST -d "username=admin@monitor.tfg&password=admin"  http://localhost:8000/api-token-auth/
+In the web app, the user can log in with the username and password, or with the token (only to the REST API).
+
+This token is assigned automatically to the user when it's registered and can be seen in the user's profile.
+
+### Get user token
+
+In case you prefer the REST API method, you can get the token with the following command:
+
+```sh
+# curl -X POST -d "username=YOUR_USERNAME&password=YOUR_PASSWORD"  http://SERVER:PORT/api-token-auth/
+curl -X POST -d "username=admin&password=admin"  http://localhost:8000/api-token-auth/
 ```
 
-## Auth with Token
+### Auth with Token
 
-```
+```sh
 # curl http://localhost:8000/api/users/ -H 'Authorization: Token YOUR_TOKEN'
 curl http://localhost:8000/api/users/ -H 'Authorization: Token abe47ef7170a53a0f9670c8b2b1081d8ace7d3e5'
 ```

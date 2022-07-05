@@ -6,8 +6,7 @@ register = template.Library()
 
 @register.filter()
 def field_name_to_label(value):
-    value = value.replace("_", " ")
-    return value.capitalize()
+    return value.replace("_", " ").capitalize()
 
 
 @register.filter()
@@ -18,7 +17,6 @@ def typeof(value):
 @register.filter()
 def todict(value):
     try:
-        value = value.replace("\'", "\"")
-        return loads(value)
+        return loads(value.replace("'", '"'))
     except Exception:
         return value
