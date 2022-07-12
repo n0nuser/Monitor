@@ -74,13 +74,15 @@ chmod +x docker_compose_up.sh
 
 ### Endpoints
 
-* `users`: http://FQDN/api/users/
-* `agents`: http://FQDN/api/agents/
-* `agent_configs`: http://FQDN/api/agent_configs/
-* `metrics`: http://FQDN/api/metrics/
-* `alerts`: http://FQDN/api/alerts/
-* `alert_emails`: http://FQDN/api/alert_emails/
-* `alert_webhooks`: http://FQDN/api/alert_webhooks/
+|   **Endpoint**   |             **URL**             |
+|:----------------:|:--------------------------------|
+|      `users`     | http://fqdn/api/users/          |
+|     `agents`     | http://fqdn/api/agents/         |
+|  `agent_configs` | http://fqdn/api/agent_configs/  |
+|     `metrics`    | http://fqdn/api/metrics/        |
+|     `alerts`     | http://fqdn/api/alerts/         |
+|  `alert_emails`  | http://fqdn/api/alert_emails/   |
+| `alert_webhooks` | http://fqdn/api/alert_webhooks/ |
 
 ### Authentication
 
