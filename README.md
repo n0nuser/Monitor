@@ -149,7 +149,7 @@ Distributed under the GPL-3.0 License. See `LICENSE.txt` for more information.
 
 Pablo González Rubio - [@n0nuser_](https://twitter.com/n0nuser_) - gonzrubio.pablo@gmail.com
 
-Project Link: [https://github.com/n0nuser/Monitor-Agent](https://github.com/n0nuser/Monitor-Agent)
+Project Link: [https://github.com/n0nuser/Monitor](https://github.com/n0nuser/Monitor)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
