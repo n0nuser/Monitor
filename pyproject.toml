@@ -14,7 +14,7 @@ packages = [
 Unipath = "^1.1"
 asgiref = "^3.5.0"
 autopep8 = "^1.6.0"
-dj-database-url = "^0.5.0"
+dj-database-url = "^1.0.0"
 django = ">=4.0,<5.0"
 django-environ = "^0.9.0"
 django-import-export = "^2.7.1"
